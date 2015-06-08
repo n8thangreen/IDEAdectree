@@ -171,6 +171,9 @@ cleanData <- function(data){
   testDate.freq <- getDateFrequencies(testDate.names, data)
 
 
+  data$timeToDiag <- estimateTimeToDiagnosis(data)
+
+
   # BAL ---------------------------------------------------------------------
 
   ## split Smear and Culture in to 2 types BAL/non-BAL
