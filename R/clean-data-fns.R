@@ -18,6 +18,22 @@ joinLevels <- function (codes, lookuplist)
 }
 
 
+#' prepend Not taken as extra level 
+#'
+#' \code{joinWithLookups} takes Access database and updates one of the tables
+#'
+#' @param Patients single table to update the data total database
+#' @return updated full database
+
+addLevel_Nottaken <- function(data, names){
+    for (i in names){
+        levels(data[,i]) <- c(levels(data[,i]),"Not taken")
+        data[,i] <- relevel(data[,i], ref="Not taken")
+    }
+    data
+}
+
+
 #' join data set with demographic look-up tables.
 #'
 #' \code{joinWithLookups} takes Access database and updates one of the tables

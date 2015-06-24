@@ -62,9 +62,10 @@ calcSumRow <- function(data, test, subsetvar, namesdt, val){
   dat <- data[data[,test]%in%val,]
 
   c(txt,"","","",
-    tabulate(dat[dat[,subsetvar],"DosanjhGrouped"], nbins=4),
-    tabulate(dat[!dat[,subsetvar],"DosanjhGrouped"], nbins=4))
+    tabulate(dat[as.logical(dat[,subsetvar]),"DosanjhGrouped"], nbins=4),
+    tabulate(dat[!as.logical(dat[,subsetvar]),"DosanjhGrouped"], nbins=4))
 }
+
 
 #' createDecisionTree
 #'
@@ -139,19 +140,32 @@ freqTable.DecisionTree <- function(decntree, subsetvar){
   test <- names[1]
   formula <- as.formula(paste(paste(names, collapse="+"),"~", "DosanjhGrouped |", subsetvar))
 
-  dtNEG <- decntree$data[decntree$data[,test]=="NEGATIVE",]
+  ## commented-out for _all_ pathways
+  # dtNEG <- decntree$data[decntree$data[,test]=="NEGATIVE",]
+  dtNEG <- decntree$data
+
   dtNEG <- reshape::cast(dtNEG, formula, fun=sum, value="Freq")
   dtNEG <- relabelDecTreeOutcomes(dt=dtNEG, join_names=names)
-  dt <- plyr::join_all(dtNEG, by=names, type="full")
-  dt <- plyr::ddply(dt, names)  #order rows
-  dt <- addMissingEntries(names, dt)
 
-  dt <- rbind(calcSumRow(data=decntree$data, test, subsetvar, namesdt=names(dtNEG), val="POSITIVE"),
-              # calcSumRow(decntree, test, subsetvar, "Not taken"),
-              dt,
-              calcSumRow(decntree$data, test, subsetvar, names(dtNEG)))
+  if(is.data.frame(dtNEG)){
+    dt <- dtNEG
+    dt <- plyr::ddply(dt, names)  #order rows
+            ##TODO## column sums
+  }else{
+    dt <- plyr::join_all(dtNEG, by=names, type="full")
+    dt <- addMissingEntries(names, dt)
+    dt <- plyr::ddply(dt, names)  #order rows
+    dt <- rbind(calcSumRow(data=decntree$data, test, subsetvar, namesdt=names(dtNEG), val="POSITIVE"),
+                # calcSumRow(decntree, test, subsetvar, "Not taken"),
+                dt,
+                calcSumRow(decntree$data, test, subsetvar, names(dtNEG)))
+  }
 
-  dt <- data.frame(dt,  Total=apply(dt[,names(dt)!=names], 1, function(x) sum(as.numeric(x))), check.names = FALSE)
+  dt <- data.frame(dt, Total = apply(dt[,names(dt)!=names], 1, function(x) sum(as.numeric(x))), check.names = FALSE)
+
+  eachCost <- calcPatientCostofTests(dt[,names])
+  eachCost[length(eachCost)] <- sum(eachCost)
+  dt <- data.frame(dt, Costs = eachCost)
 
   dt
 }
@@ -171,8 +185,8 @@ writeAllFreqTables <- function(out, dir){
   nm <- names(out)[names(out)!="t1"]
 
   ## before culture ##
-  treat1obs <- freqTable.DecisionTree(decntree=out$t1, subsetvar="treat1")
-  treat1est <- freqTable.DecisionTree(decntree=out$t1, subsetvar="treat1.est")
+  treat1obs <- suppressWarnings(freqTable.DecisionTree(decntree=out$t1, subsetvar="treat1"))  # subsetvar=".")
+  treat1est <- suppressWarnings(freqTable.DecisionTree(decntree=out$t1, subsetvar="treat1.est"))
   write.csv(treat1obs, file=paste(dir,"/treat1obs.csv", sep=""))
   write.csv(treat1est, file=paste(dir,"/treat1est.csv", sep=""))
 

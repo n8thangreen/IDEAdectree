@@ -12,8 +12,6 @@ prepDataForDecTree <- function(data, data.names){
 
   # removals
 
-  othertest.names <- "IGRA"
-
   ## identify patient records with desired test outcomes (only)
   allTests <- apply(data[,c("TBcult","Smear")], 1, function(x)
     !any(x=="Not taken" | x=="INDETERMINATE" | x=="" | is.na(x)))
