@@ -128,7 +128,7 @@ joinDataAndRules <- function(data, DTobj){
 #' \code{freqTable.DecisionTree}
 #'
 #' @param decntree
-#' @param subsetvar
+#' @param subsetvar string of which variable to subset the patients e.g. observed treatment (treat1) or idealise treatment (treat1.est)
 #' @return one combined frequency table of each decision outcomes
 
 freqTable.DecisionTree <- function(decntree, subsetvar){
@@ -205,13 +205,13 @@ writeAllFreqTables <- function(out, dir){
 }
 
 
-#' create DT object
+#' Create Decision Tree object
 #'
 #' \code{createDTobj}
 #'
-#' @param data Individual patient records
-#' @param allgrids The idealised pathway look-up tables
-#' @return The joined tables with aggregated outcome wrt Dosanjh categories
+#' @param rules a matrix which is the decision tree rules so combinations of results and an associated outcome
+#' @param input a string of which columns names are the branches i.e. tests
+#' @return A list of matrices of branch input cominations, outcomes (decisions) and the combined data
 
 createDTobj <- function(rules, input){
   res <- list()
@@ -222,7 +222,7 @@ createDTobj <- function(rules, input){
 }
 
 
-#' createCombinedGrid
+#' Create a combined grid
 #'
 #' \code{createCombinedGrid}
 #'

@@ -9,7 +9,7 @@ freqTable.DecisionTree(decntree, subsetvar)
 \arguments{
 \item{decntree}{}
 
-\item{subsetvar}{}
+\item{subsetvar}{string of which variable to subset the patients e.g. observed treatment (treat1) or idealise treatment (treat1.est)}
 }
 \value{
 one combined frequency table of each decision outcomes

@@ -1,6 +1,6 @@
 #' Clean IDEA clinical data.
 #'
-#' \code{cleanData} cleans IDEA clinical data for analysis
+#' \code{cleanData} is a high-level function to clean IDEA clinical data for analysis
 #'
 #' @param data Individual patient records
 #' @return data
@@ -9,7 +9,7 @@ cleanData <- function(data){
   ## data: file address (string)
   ##
 
-  load(file=data)
+  # load(file=data)
 
 
   # TB tests ------------------------------------------------------------------
@@ -75,8 +75,10 @@ cleanData <- function(data){
   testDate.names <- c("TBculttestDate","QFNtestDate", "TSPOTtestDate", "TSTtestDate", "SmeartestDate", "BALtestDate", "HistBioptestDate",
                       "NeedleAsptestDate", "PCRtestDate", "CXRtestDate", "CTtestDate", "MRItestDate", "Othertest1Date", "Othertest2Date","PETtestDate")
 
-  for (i in c(TBdrugStart.names, TBDrugEnd.names, testDate.names, "EntryUK","DateDiagCon","DateConsent")){
-    data[,i] <- as.Date.POSIX(data[,i])}
+  for (i in c(TBdrugStart.names, TBDrugEnd.names, testDate.names,
+              "EntryUK", "DateDiagCon", "DateConsent")){
+    data[,i] <- as.Date.POSIX(data[,i])
+  }
 
   ## missing dates
   data[data=="1900-01-01"] <- NA
@@ -92,16 +94,14 @@ cleanData <- function(data){
 
   ## combine drug start dates for multiple patient records
   for (id in unique(data$PatientStudyID)[!is.na(unique(data$PatientStudyID))]){
+
     for (i in TBdrugStart.names){
       data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i] <-
         min(data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i], na.rm=T)
     }
-  }
-
-  for (id in unique(data$PatientStudyID)[!is.na(unique(data$PatientStudyID))]){
-    for (i in TBDrugEnd.names){
-      data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i] <-
-        min(data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i], na.rm=T)
+    for (j in TBDrugEnd.names){
+      data[data$PatientStudyID==id & !is.na(data$PatientStudyID), j] <-
+        min(data[data$PatientStudyID==id & !is.na(data$PatientStudyID), j], na.rm=T)
     }
   }
 
@@ -117,7 +117,7 @@ cleanData <- function(data){
 
   # lower limits culture report dates -----------------------------------------
 
-  dur <- c(POSITIVE=1, NEGATIVE=42)   #days
+  dur <- c(POSITIVE=1, NEGATIVE=42)   #days i.e. 6 weeks
   data$TBculttestDate.orig <- data$TBculttestDate
   dur.each <- as.vector(dur[as.character(data$TBcult)])
   data <- transform(data, TBculttestDate.resMin = testDate.min+dur.each)
@@ -137,7 +137,7 @@ cleanData <- function(data){
                     testDrug_diff = difftime(TBDrugStart.min, testDate.min, units="days"),
                     testDiagCon_diff = round(difftime(DateDiagCon, testDate.min, units="days")),
                     testCult_diff = difftime(TBculttestDate, testDate.min, units="days"),
-
+                    testCultorig_diff = difftime(TBculttestDate.orig, testDate.min, units="days"),
                     EntryUKtest_diff = year(testDate.min)- EntryUK_year
   )
 
@@ -152,13 +152,7 @@ cleanData <- function(data){
   ## whats the field for this??
 
 
-  TBtreatdur.num <- c("6 months"=6, "2 months"=2, "3 months"=3, "9 months"=9, "12 months"=12)
-
-
-  ## add-on treatment duration time when end of treatment date not given
-  tdur <- is.na(data$TBDrugEnd.max) & data$TBtreatdur%in%names(TBtreatdur.num)
-  data$TBDrugEnd.max[tdur] <- as.Date(as.mondate(data$TBDrugStart.min)[tdur] + TBtreatdur.num[data$TBtreatdur][tdur])
-  data$TBDrugEnd.max.estimate <- tdur
+  data <- fillInEndOfTreatmentDate(data)
 
   data$TBDrug_diff <- difftime(data$TBDrugEnd.max, data$TBDrugStart.min, units="days")
 
@@ -171,7 +165,7 @@ cleanData <- function(data){
   testDate.freq <- getDateFrequencies(testDate.names, data)
 
 
-  data$timeToDiag <- estimateTimeToDiagnosis(data)
+  # data$timeToDiag <- estimateTimeToDiagnosis(data)
 
 
   # BAL ---------------------------------------------------------------------
@@ -211,45 +205,8 @@ cleanData <- function(data){
   data$TSTres <- as.factor(data$TSTres)
   data$IGRAorTST <- as.factor(data$IGRAorTST)
 
-  ### add level
-  levels(data$IGRA) <- c(levels(data$IGRA),"Not taken")
-  levels(data$imaging) <- c(levels(data$imaging),"Not taken")
-  levels(data$Smear) <- c(levels(data$Smear),"Not taken")
-  levels(data$TBcult) <- c( levels(data$TBcult),"Not taken")
-  levels(data$imaging) <- c(levels(data$imaging),"Not taken")
-  levels(data$CXR) <- c(levels(data$CXR),"Not taken")
-  levels(data$CT) <- c(levels(data$CT),"Not taken")
-  levels(data$CSF) <- c(levels(data$CSF),"Not taken")
-  levels(data$BAL) <- c(levels(data$BAL),"Not taken")
-  levels(data$QFN) <- c( levels(data$QFN),"Not taken")
-  levels(data$TSPOT) <- c( levels(data$TSPOT),"Not taken")
-  levels(data$HistBiop) <- c( levels(data$HistBiop),"Not taken")
-  levels(data$NeedleAsp) <- c(levels(data$NeedleAsp),"Not taken")
-  levels(data$PCR) <- c(levels(data$PCR),"Not taken")
-  levels(data$MRI) <- c(levels(data$MRI),"Not taken")
-  levels(data$TSTcut) <- c(levels(data$TSTcut),"Not taken")
-  levels(data$PET) <- c(levels(data$PET),"Not taken")
-  levels(data$TSTres) <- c(levels(data$TSTres),"Not taken")
-  levels(data$IGRAorTST) <- c(levels(data$IGRAorTST),"Not taken")
-
-  data$Smear <- relevel(data$Smear, ref="Not taken")
-  data$TBcult <- relevel(data$TBcult, ref="Not taken")
-  data$CXR <- relevel(data$CXR, ref="Not taken")
-  data$CT <- relevel(data$CT, ref="Not taken")
-  data$IGRA <- relevel(data$IGRA, ref="Not taken")
-  data$imaging <- relevel(data$imaging, ref="Not taken")
-  data$CSF <- relevel(data$CSF, ref="Not taken")
-  data$BAL <- relevel(data$BAL, ref="Not taken")
-  data$QFN <- relevel(data$QFN, ref="Not taken")
-  data$TSPOT <- relevel(data$TSPOT, ref="Not taken")
-  data$HistBiop <- relevel(data$HistBiop, ref="Not taken")
-  data$NeedleAsp <- relevel(data$NeedleAsp, ref="Not taken")
-  data$PCR <-relevel(data$PCR, ref="Not taken")
-  data$MRI <- relevel(data$MRI, ref="Not taken")
-  data$TSTcut <- relevel(data$TSTcut, ref="Not taken")
-  data$PET <- relevel(data$PET, ref="Not taken")
-  data$TSTres <- relevel(data$TSTres, ref="Not taken")
-  data$IGRAorTST <- relevel(data$IGRAorTST, ref="Not taken")
+  data <- addLevel_Nottaken(data, c("IGRA","imaging","Smear","TBcult","imaging","CXR","CT","CSF","BAL","QFN","TSPOT",
+                                    "HistBiop","NeedleAsp","PCR","MRI","TSTcut","PET","TSTres","IGRAorTST"))
 
   data$Dosanjh <- as.factor(data$Dosanjh)
   data$Dosanjh <- relevel(data$Dosanjh, ref="1")
@@ -280,7 +237,8 @@ cleanData <- function(data){
   data$jobrisk <- data$New_occupation=="Healthcare worker"
 
   ## group diagnosis outcomes
-  ##TODO##confirm this grouping with clinicians...
+  ##TODO## do over-lapping groups
+
   lookuplist <- list("LRTI"=c("LRTI",
                               "LTBI - treatment indicated",
                               "LTBI - treatment indicated;Other",
@@ -378,35 +336,9 @@ cleanData <- function(data){
   data <- data.frame(data, x, y)
 
 
-  # removals -----------------------------------------------------------------
+  data <- rmPatientsInCleaning(data)
 
-  ## duplicated patients (make sure that don't lose info that we want!)
-  # View(data[duplicated(data$PatientStudyID) | duplicated(data$PatientStudyID, fromLast = T),])
-  data <- data[!duplicated(data$PatientStudyID),]
-
-  ## `complete' records only before cut-off date
-  data <- data[as.Date.POSIX(data$DateConsent)<=as.Date("2013-08-31") & !is.na(data$DateConsent),]
-
-  data <- data[data$Exclude=="No" | is.na(data$Exclude) | data$Exclude=="",]
-
-  ## non-EPTB only
-  ## do we really want the cases that are _suspected_ of being PTB instead?
-  data <- data[data$EPTBorPTB=="PTB" | data$EPTBorPTB=="EPTB;PTB" | is.na(data$EPTBorPTB) | data$EPTBorPTB=="",]
-
-  ## not on our diagnostic pathway
-  ### patients treated _before_ first test
-  data <- data[data$preTestDrug==FALSE | is.na(data$preTestDrug),]
-
-  ### confirmed diagnosis before first test
-  data <- data[data$testDiagCon_diff>=0 | is.na(data$testDiagCon_diff),]
-
-
-  # risk factor score -------------------------------------------------------
-
-  riskfacs <- c("WHOcut","jobrisk","numSymptoms","TBcont","PatientAge","Sex","Ethnclass","CurrHomeless","HIVpos")
-  formula <- paste("TBconfirmed~", paste(riskfacs,collapse="+"), sep="")
-  fit <- glm(formula, data=data, family = binomial, na.action = na.exclude)
-  data$riskfacScore <- predict(fit, type = "response", na.action = na.exclude)
+  data <- calcRiskFactorScore(data)
 
 
   data

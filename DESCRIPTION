@@ -1,0 +1,20 @@
+Package: IDEAdectree
+Title: Compares IDEA study clinical data with decision tree idealised pathway
+Version: 0.1
+Author@R: person("Nathan", "Green", email = "nathan.green@imperial.ac.uk", role = c("aut", "cre"))
+Description: The deterministic decision tree is consists of two (ordered) static lookups
+    consisting of before culture result and after. The after case is further extended to
+    to include predicted intermediate outcomes
+    or observed. That is whether treatment was started in advance of culture results and
+    what the effects of symptoms actually
+    where or would, counterfactually, have been
+Depends: R (>= 3.1.0)
+License: MIT
+LazyData: no
+Imports: reshape,
+         ggplot2,
+         XLConnect,
+         plyr,
+         mondate,
+         lubridate
+Suggests: testthat

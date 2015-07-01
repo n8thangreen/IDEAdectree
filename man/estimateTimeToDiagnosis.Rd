@@ -13,6 +13,6 @@ estimateTimeToDiagnosis(data)
 timeToDiag
 }
 \description{
-\code{estimateTimeToDiagnosis} returns estimates of time to diagnosis for each patient
+\code{estimateTimeToDiagnosis} estimates time to diagnosis for each patient using simple pre-defined rules
 }
 

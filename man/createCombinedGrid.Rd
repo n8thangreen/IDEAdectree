@@ -2,7 +2,7 @@
 % Please edit documentation in R/DecisionTreeIDEA-fn.R
 \name{createCombinedGrid}
 \alias{createCombinedGrid}
-\title{createCombinedGrid}
+\title{Create a combined grid}
 \usage{
 
   createCombinedGrid(dir = "C:/Users/Nathan/Dropbox/TB/IDEA/output_data/idealpathway_grids/")

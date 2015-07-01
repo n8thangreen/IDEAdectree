@@ -2,17 +2,17 @@
 % Please edit documentation in R/DecisionTreeIDEA-fn.R
 \name{createDTobj}
 \alias{createDTobj}
-\title{create DT object}
+\title{Create Decision Tree object}
 \usage{
 createDTobj(rules, input)
 }
 \arguments{
-\item{data}{Individual patient records}
+\item{rules}{a matrix which is the decision tree rules so combinations of results and an associated outcome}
 
-\item{allgrids}{The idealised pathway look-up tables}
+\item{input}{a string of which columns names are the branches i.e. tests}
 }
 \value{
-The joined tables with aggregated outcome wrt Dosanjh categories
+A list of matrices of branch input cominations, outcomes (decisions) and the combined data
 }
 \description{
 \code{createDTobj}

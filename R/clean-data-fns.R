@@ -1,3 +1,75 @@
+#' Calculate a risk factor score for each patient
+#'
+#' \code{calcRiskFactorScore}
+#'
+#' @param data
+#' @return data
+#'
+
+calcRiskFactorScore <- function(data){
+  riskfacs <- c("WHOcut","jobrisk","numSymptoms","TBcont","PatientAge","Sex","Ethnclass","CurrHomeless","HIVpos")
+  formula <- paste("TBconfirmed~", paste(riskfacs,collapse="+"), sep="")
+  fit <- glm(formula, data=data, family = binomial, na.action = na.exclude)
+  data$riskfacScore <- predict(fit, type = "response", na.action = na.exclude)
+  data
+}
+
+
+#' Remove Patients Records In Data Cleaning
+#'
+#' \code{rmPatientsInCleaning}
+#'
+#' @param data
+#' @return data
+#'
+
+rmPatientsInCleaning <- function(data){
+
+  ## duplicated patients (make sure that don't lose info that we want!)
+  # View(data[duplicated(data$PatientStudyID) | duplicated(data$PatientStudyID, fromLast = T),])
+  data <- data[!duplicated(data$PatientStudyID),]
+
+  ## `complete' records only before cut-off date
+  data <- data[as.Date.POSIX(data$DateConsent)<=as.Date("2013-08-31") & !is.na(data$DateConsent),]
+
+  data <- data[data$Exclude=="No" | is.na(data$Exclude) | data$Exclude=="",]
+
+  ## non-EPTB only
+  ## do we really want the cases that are _suspected_ of being PTB instead?
+  data <- data[data$EPTBorPTB=="PTB" | data$EPTBorPTB=="EPTB;PTB" | is.na(data$EPTBorPTB) | data$EPTBorPTB=="",]
+
+  ## not on our diagnostic pathway
+  ### patients treated _before_ first test
+  data <- data[data$preTestDrug==FALSE | is.na(data$preTestDrug),]
+
+  ### confirmed diagnosis before first test
+  data <- data[data$testDiagCon_diff>=0 | is.na(data$testDiagCon_diff),]
+
+  data
+}
+
+
+#' Fill-in End Of Treatment Dates
+#'
+#' \code{fillInEndOfTreatmentDate}
+#'
+#' @param data
+#' @return data
+#'
+
+fillInEndOfTreatmentDate <- function(data){
+  ## add-on treatment duration time when end of treatment date not given
+
+  TBtreatdur.num <- c("6 months"=6, "2 months"=2, "3 months"=3, "9 months"=9, "12 months"=12)
+  tdur <- is.na(data$TBDrugEnd.max) & data$TBtreatdur%in%names(TBtreatdur.num)
+  data$TBDrugEnd.max[tdur] <- as.Date(as.mondate(data$TBDrugStart.min)[tdur] +
+                                        TBtreatdur.num[data$TBtreatdur][tdur])
+  data$TBDrugEnd.max.estimate <- tdur
+
+  data
+}
+
+
 #' Read from database extract.
 #'
 #' \code{joinLevels} takes Access database and updates one of the tables
@@ -18,7 +90,7 @@ joinLevels <- function (codes, lookuplist)
 }
 
 
-#' prepend Not taken as extra level 
+#' prepend Not taken as extra level
 #'
 #' \code{joinWithLookups} takes Access database and updates one of the tables
 #'
@@ -42,7 +114,8 @@ addLevel_Nottaken <- function(data, names){
 #' @return updated full database
 
 joinWithLookups <- function(data){
-  #
+
+  # data(cob_lookup, envir=environment())
 
   cob_lookup$Region <- toupper(cob_lookup$Region)
 

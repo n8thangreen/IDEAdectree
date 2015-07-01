@@ -11,7 +11,7 @@ pwayComparison.simple(data, test.DT, form = "Dosanjh")
 
 \item{test.DT}{(idealised) decision tree object returned by \code{createDTobj()}}
 
-\item{form}{formula identifier between grouping by final Dosanjh category (default), observed presumptive treatment decision (step1Diag) or pooled (all)}
+\item{form}{formula identifier for grouping by final Dosanjh category (default), observed presumptive treatment decision (step1Diag) or pooled (all)}
 }
 \value{
 list length 2
