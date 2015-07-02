@@ -127,18 +127,52 @@ cleanData <- function(data){
 
 
   ## time-to-events
+  calcTimeToEvent <- function(testDate) difftime(testDate, testDate.min, units="days")
+
   data <- transform(data,
                     TBconfirmed = (Diagoutcome%in%c("Active TB", "Active TB;Other")),
 
                     preCultDrug = (TBculttestDate>TBDrugStart.min),
                     preTestDrug = (testDate.min>TBDrugStart.min),
 
+##TODO## test...
+
+
                     DrugCult_diff = round(difftime(TBculttestDate, TBDrugStart.min, units="days")),
                     testDrug_diff = difftime(TBDrugStart.min, testDate.min, units="days"),
                     testDiagCon_diff = round(difftime(DateDiagCon, testDate.min, units="days")),
                     testCult_diff = difftime(TBculttestDate, testDate.min, units="days"),
                     testCultorig_diff = difftime(TBculttestDate.orig, testDate.min, units="days"),
-                    EntryUKtest_diff = year(testDate.min)- EntryUK_year
+                    EntryUKtest_diff = year(testDate.min) - EntryUK_year,
+
+start.to.Smear = calcTimeToEvent(SmearttestDate),
+start.to.HistBiop = calcTimeToEvent(HistBioptestDate),
+start.to.TBcult = calcTimeToEvent(TBculttestDate),
+start.to.BAL = calcTimeToEvent(BALtestDate),
+start.to.PCR = calcTimeToEvent(PCRttestDate),
+start.to.TST = calcTimeToEvent(TSTtestDate),
+start.to.CT = calcTimeToEvent(CTtestDate),
+start.to.MRI = calcTimeToEvent(MRItestDate),
+start.to.PET = calcTimeToEvent(PETtestDate),
+start.to.QFN = calcTimeToEvent(QFNttestDate),
+start.to.TSPOT = calcTimeToEvent(TSPOTtestDate),
+
+
+                    start.to.Smear = difftime(SmearttestDate, testDate.min, units="days"),
+                    start.to.HistBiop = difftime(HistBioptestDate, testDate.min, units="days"),
+                    start.to.TBcult = difftime(TBculttestDate, testDate.min, units="days"),
+                    start.to.BAL = difftime(BALtestDate, testDate.min, units="days"),
+                    start.to.PCR = difftime(PCRttestDate, testDate.min, units="days"),
+                    start.to.TST = difftime(TSTtestDate, testDate.min, units="days"),
+                    start.to.CT = difftime(CTtestDate, testDate.min, units="days"),
+                    start.to.MRI = difftime(MRItestDate, testDate.min, units="days"),
+                    start.to.PET = difftime(PETtestDate, testDate.min, units="days"),
+                    start.to.QFN = difftime(QFNttestDate, testDate.min, units="days"),
+                    start.to.TSPOT = difftime(TSPOTtestDate, testDate.min, units="days"),
+
+                    start.to.Imaging = max(c(start.to.CT, start.to.MRI, start.to.PET), na.rm=T),
+                    start.to.IGRA = max(c(start.to.QFN, start.to.TSPOT), na.rm=T)
+
   )
 
   data$preTestDrug[is.na(data$preTestDrug)] <- FALSE

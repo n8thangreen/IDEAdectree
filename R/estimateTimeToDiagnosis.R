@@ -19,31 +19,30 @@ estimateTimeToDiagnosis <- function(data){
 
   alllist <- list()
 
-  data$testCultorig_diff <- difftime(data$TBculttestDate.orig, data$testDate.min, units="days")
-  testDrugEnd <- data$testDrug_diff + data$TBDrug_diff
-  testDate.names <- c("TBculttestDate","QFNtestDate", "TSPOTtestDate", "TSTtestDate", "SmeartestDate", "BALtestDate",
-                      "HistBioptestDate", "NeedleAsptestDate", "PCRtestDate", "CXRtestDate", "CTtestDate",
-                      "MRItestDate", "Othertest1Date",  "Othertest2Date","PETtestDate")
-  data$testDate.max <- apply(data[,testDate.names[-1]], 1, max, na.rm=T)
-  data$testminmax_diff <- difftime(data$testDate.max, data$testDate.min, units="days")
 
   for (i in 1:nrow(data)){
     eachlist <- vector("numeric", 0)
+
     if (data$TBcult[i]=="POSITIVE")
       eachlist <- c(testCult_diff=data$testCult_diff[i])
     else{
-      if (isValid(data$testCultorig_diff[i]) & (data$TBcult[i]=="NEGATIVE") & !data$TBcultCens[i])
-        eachlist <- c(testCultorig_diff=data$testCultorig_diff[i])
 
-      if (isValid(data$testDrug_diff[i]) & (data$Dosanjh[i]=="2"))
-        eachlist <- c(eachlist, testDrug_diff=data$testDrug_diff[i] + 62)
+      diagcols.names <- c("MeansFinDiag1", "MeansFinDiagother.multiple", "Diagnostic_mean")
+      diag.list <- list("Smear"=start.to.Smear, "Imaging"=start.to.Imaging, "Histology"=start.to.HistBiop, "Clinical features"=NA,
+                        "IGRA"=start.to.IGRA, "Culture"=start.to.TBcult, "Response to Treatment"=TBDrugStart.min,
+                        "EBUS"=NA, "PET"=start.to.PET, "BAL"=start.to.BAL, "PCR"=start.to.PCR, "TST"=start.to.TST, "Empiric"=NA)
 
-      if (isValid(testDrugEnd[i]) & (data$DosanjhGrouped[i]=="4"))
-        eachlist <- c(eachlist, testDrugEnd=data$testDrugEnd[i])
+      for (keyword in names(diag.list)){
 
-      if (isValid(data$testminmax_diff[i]) & (data$DosanjhGrouped[i]=="4"))
-        eachlist <- c(eachlist, testminmax_diff=data$testminmax_diff[i])
+        testTF <- any(sapply(data[i, diagcols.names], function(x) grepl(keyword, x, ignore.case=TRUE)))
+        if(testTF)  diagtime <- diag.list[[keyword]]
+      }
+      data$start.to.diag[i] <- data[i,diagtime]
+      eachlist <- c(eachlist, data[i,diagtime])
+
     }
+
+
     alllist[[i]] <- eachlist
   }
 
@@ -52,8 +51,8 @@ estimateTimeToDiagnosis <- function(data){
   combinedtimes <- unlist(lapply(alllist, min, na.rm=T))
   combinedtimes[is.infinite(combinedtimes)] <- NA
 
-
   return(round(combinedtimes))
+
 }
 
 
