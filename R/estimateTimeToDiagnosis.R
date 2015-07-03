@@ -1,12 +1,14 @@
 #' Rule-based time to diagnosis estimation
 #'
-#' \code{estimateTimeToDiagnosis} estimates time to diagnosis for each patient using simple pre-defined rules
+#' \code{estimateTimeToDiagnosis} estimates time to diagnosis for each patient using simple pre-defined rules.
+#' This time is not directly available in the data but can be got at in most cases indirectly.
 #'
 #' @param data Individual patient records
-#' @return timeToDiag
+#' @return data with the start.to.diag column appended
+
 
 estimateTimeToDiagnosis <- function(data){
-  ## call: estimateTimeToDiagnosis(data)
+  ## call: data <- estimateTimeToDiagnosis(data)
 
   ## the rules for estimationg time to diagnosis are:
   ## 1) If culture +ve then take report time
@@ -14,45 +16,38 @@ estimateTimeToDiagnosis <- function(data){
   ## 3) min{DateDiagCon, lasttestDate}
 
 
+  is.TestUsedAsMeansOfDiag <- function(data, i, testKeyword){
 
-  isValid <- function(x) (x>=0) & !is.na(x)
+    datai <- data[i, c("MeansFinDiag1", "MeansFinDiagother.multiple", "Diagnostic_mean")]
+    any(sapply(datai, function(x) grepl(testKeyword, x, ignore.case=TRUE)))
+  }
 
-  alllist <- list()
+
+  getDiagnosisTimeViaMeans <- function(data, i){
+
+    diagtime <- NA
+    diag.list <- list("Smear"="start.to.Smear", "Imaging"="start.to.Imaging", "Histology"="start.to.HistBiop",
+                      "IGRA"="start.to.IGRA", "Culture"="start.to.TBcult", "Response to Treatment"="testDrug_diff_plus63days",
+                      "PET"="start.to.PET", "BAL"="start.to.BAL", "PCR"="start.to.PCR", "TST"="start.to.TST")
+                      # "EBUS"=NA, "Clinical features"=NA, "Empiric"=NA)  #as date of presentation?
+
+    for (testKeyword in names(diag.list)){
+
+      if(is.TestUsedAsMeansOfDiag(data, i, testKeyword)) diagtime <- c(diagtime, data[i, diag.list[[testKeyword]]])
+    }
+    max(diagtime, na.rm=TRUE) #min?
+  }
 
 
   for (i in 1:nrow(data)){
-    eachlist <- vector("numeric", 0)
 
     if (data$TBcult[i]=="POSITIVE")
-      eachlist <- c(testCult_diff=data$testCult_diff[i])
+      data$start.to.diag[i]  <- data$testCult_diff[i]
     else{
-
-      diagcols.names <- c("MeansFinDiag1", "MeansFinDiagother.multiple", "Diagnostic_mean")
-      diag.list <- list("Smear"=start.to.Smear, "Imaging"=start.to.Imaging, "Histology"=start.to.HistBiop, "Clinical features"=NA,
-                        "IGRA"=start.to.IGRA, "Culture"=start.to.TBcult, "Response to Treatment"=TBDrugStart.min,
-                        "EBUS"=NA, "PET"=start.to.PET, "BAL"=start.to.BAL, "PCR"=start.to.PCR, "TST"=start.to.TST, "Empiric"=NA)
-
-      for (keyword in names(diag.list)){
-
-        testTF <- any(sapply(data[i, diagcols.names], function(x) grepl(keyword, x, ignore.case=TRUE)))
-        if(testTF)  diagtime <- diag.list[[keyword]]
-      }
-      data$start.to.diag[i] <- data[i,diagtime]
-      eachlist <- c(eachlist, data[i,diagtime])
-
-    }
-
-
-    alllist[[i]] <- eachlist
+      data$start.to.diag[i] <- getDiagnosisTimeViaMeans(data, i)}
   }
 
-  # lapply(alllist, function(x) names(which(x==min(x, na.rm=T), arr.ind=TRUE)))
-
-  combinedtimes <- unlist(lapply(alllist, min, na.rm=T))
-  combinedtimes[is.infinite(combinedtimes)] <- NA
-
-  return(round(combinedtimes))
-
+  return(data)
 }
 
 

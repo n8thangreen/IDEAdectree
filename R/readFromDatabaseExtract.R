@@ -39,6 +39,7 @@ readFromDatabaseExtract <- function(){
   names <- c("PatientStudyID", setdiff(extractNames, patientNames))
   data <- merge(data[,names], Patients[,patientNames], by="PatientStudyID")
 
+  # save(data, file="C:/Users/nathan.green/Dropbox/TB/IDEA/output_data/TBdata_prepd_190315.RData")
   data
 }
 
