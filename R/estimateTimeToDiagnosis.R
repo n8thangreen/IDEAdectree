@@ -27,7 +27,9 @@ estimateTimeToDiagnosis <- function(data){
 
     diagtime <- NA
     diag.list <- list("Smear"="start.to.Smear", "Imaging"="start.to.Imaging", "Histology"="start.to.HistBiop",
-                      "IGRA"="start.to.IGRA", "Culture"="start.to.TBcult", "Response to Treatment"="testDrug_diff_plus63days",
+                      "IGRA"="start.to.IGRA", "Culture"="start.to.TBcultorig",
+                      # "Response to Treatment"="testDrug_diff_plus63days",
+                      "Response to Treatment"="start.to.FU",
                       "PET"="start.to.PET", "BAL"="start.to.BAL", "PCR"="start.to.PCR", "TST"="start.to.TST")
                       # "EBUS"=NA, "Clinical features"=NA, "Empiric"=NA)  #as date of presentation?
 
@@ -42,10 +44,12 @@ estimateTimeToDiagnosis <- function(data){
   for (i in 1:nrow(data)){
 
     if (data$TBcult[i]=="POSITIVE")
-      data$start.to.diag[i]  <- data$testCult_diff[i]
+      data$start.to.diag[i]  <- data$testCultorig_diff[i]
     else{
       data$start.to.diag[i] <- getDiagnosisTimeViaMeans(data, i)}
   }
+
+  data$start.to.diag[is.infinite(data$start.to.diag)] <- NA
 
   return(data)
 }

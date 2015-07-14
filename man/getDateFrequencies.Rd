@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean-data-fns.R
 \name{getDateFrequencies}
 \alias{getDateFrequencies}
-\title{getDateFrequencies}
+\title{Get the Date Frequencies}
 \usage{
 getDateFrequencies(colnames, data)
 }

@@ -10,9 +10,10 @@ estimateTimeToDiagnosis(data)
 \item{data}{Individual patient records}
 }
 \value{
-timeToDiag
+data with the start.to.diag column appended
 }
 \description{
-\code{estimateTimeToDiagnosis} estimates time to diagnosis for each patient using simple pre-defined rules
+\code{estimateTimeToDiagnosis} estimates time to diagnosis for each patient using simple pre-defined rules.
+This time is not directly available in the data but can be got at in most cases indirectly.
 }
 

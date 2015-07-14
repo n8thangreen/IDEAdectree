@@ -65,6 +65,8 @@ cleanData <- function(data){
 
   test.names <- c("IGRA", "imaging", test.names, "PET", "TSTres", "IGRAorTST")
 
+
+
   data <- joinWithLookups(data)
 
 
@@ -92,6 +94,10 @@ cleanData <- function(data){
   for (i in 1:ncol(data)){
     data[grepl("-06-15", data[,i]),i] <- NA}
 
+
+  assert.dateinpast(data, testDate.names)
+
+
   ## combine drug start dates for multiple patient records
   for (id in unique(data$PatientStudyID)[!is.na(unique(data$PatientStudyID))]){
 
@@ -114,6 +120,8 @@ cleanData <- function(data){
   data$TBDrugEnd.max   <- as.Date.POSIX(data$TBDrugEnd.max)
   data$testDate.min    <- as.Date.POSIX(data$testDate.min)
 
+  data$DateVisitFU <- as.Date.POSIX(data$DateVisitFU)
+
 
   # lower limits culture report dates -----------------------------------------
 
@@ -126,8 +134,10 @@ cleanData <- function(data){
   data$TBcultCens <- data$TBculttestDate!=data$TBculttestDate.orig
 
 
-  ## time-to-events
+  # time-to-events ----------------------------------------------------------
+
   calcTimeToEvent <- function(testDate) difftime(testDate, data$testDate.min, units="days")
+
 
   data <- transform(data,
                     TBconfirmed = (Diagoutcome%in%c("Active TB", "Active TB;Other")),
@@ -144,7 +154,7 @@ cleanData <- function(data){
 
                     start.to.Smear = calcTimeToEvent(SmeartestDate),
                     start.to.HistBiop = calcTimeToEvent(HistBioptestDate),
-                    start.to.TBcult = calcTimeToEvent(TBculttestDate),
+                    start.to.TBcultorig = calcTimeToEvent(TBculttestDate.orig),
                     start.to.BAL = calcTimeToEvent(BALtestDate),
                     start.to.PCR = calcTimeToEvent(PCRtestDate),
                     start.to.TST = calcTimeToEvent(TSTtestDate),
@@ -152,12 +162,18 @@ cleanData <- function(data){
                     start.to.MRI = calcTimeToEvent(MRItestDate),
                     start.to.PET = calcTimeToEvent(PETtestDate),
                     start.to.QFN = calcTimeToEvent(QFNtestDate),
-                    start.to.TSPOT = calcTimeToEvent(TSPOTtestDate)
+                    start.to.TSPOT = calcTimeToEvent(TSPOTtestDate),
+
+                    start.to.FU = calcTimeToEvent(DateVisitFU)
   )
 
-  data$start.to.Imaging = pmax(data$start.to.CT, data$start.to.MRI, data$start.to.PET, na.rm=T)
-  data$start.to.IGRA = pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
+  # View(data.frame(data$PatientStudyID, data$testDate.min, data$DateVisitFU, data$DateVisitFU0, data$start.to.FU)[order(data$PatientStudyID),])  #check
 
+  data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.MRI, data$start.to.PET, na.rm=T)
+  data$start.to.IGRA <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
+
+  ## only interested in 2 month followup
+  # data$start.to.FU[data$VisitFU!="2 month FU"] <- NA
 
   data$preTestDrug[is.na(data$preTestDrug)] <- FALSE
 
@@ -175,8 +191,9 @@ cleanData <- function(data){
   data$TBDrug_diff <- difftime(data$TBDrugEnd.max, data$TBDrugStart.min, units="days")
 
   ## this isn't perfect because there may be treatment gaps but is an ok approximation
-  data$treatResponse <- (as.numeric(data$TBDrug_diff)>63)     #i.e. ~2 months
-  data$testDrug_diff_plus63days <- data$testDrug_diff + 63
+  drugReviewPeriod <- 63     #i.e. ~2 months
+  data$treatResponse <- (as.numeric(data$TBDrug_diff) > drugReviewPeriod)
+  data$testDrug_diff_plus63days <- data$testDrug_diff + drugReviewPeriod
 
 
   TBdrugStart.freq <- getDateFrequencies(TBdrugStart.names, data)
@@ -330,7 +347,7 @@ cleanData <- function(data){
       observedEndDates[is.na(observedEndDates)] <- as.Date("2020/01/01")       #replace missing with large dates
 
       if(data$step1Diag[i]){
-        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) (x - data$TBDrugStart.min[i])<63))      #response to treatment
+        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) (x - data$TBDrugStart.min[i])<drugReviewPeriod))      #response to treatment
         ## could alternatively have same as below?
         ## ...
       }else{
@@ -359,6 +376,7 @@ cleanData <- function(data){
 
   data <- calcRiskFactorScore(data)
 
+  data <- droplevels(data)
 
   return(data)
 }

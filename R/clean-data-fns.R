@@ -152,7 +152,23 @@ as.Date.POSIX <- function(date){
 }
 
 
-#' Combine test results.
+#' Assert dates are in the past
+#'
+#' \code{assert.dateinpast} Checks whether all of the dates all in the past
+#'
+#' @param data
+#' @param testDate.names
+#' @return NULL
+
+assert.dateinpast <- function(data, testDate.names){
+  for (i in 1:nrow(data)){
+    cond <- sapply(data[i,testDate.names], function(x) difftime(x, as.Date.POSIX("2016-01-01")))
+    if(!all(is.na(cond))) stopifnot(any(cond<0, na.rm=TRUE))
+  }
+}
+
+
+#' Combine test results
 #'
 #' \code{combineTestResults} returns joined tables of inputs and predicted outcomes
 #'
@@ -185,7 +201,7 @@ combineTestResults <- function(test1, test2){
     res
 }
 
-#' getDateFrequencies
+#' Get the Date Frequencies
 #'
 #' \code{getDateFrequencies} returns joined tables of inputs and predicted outcomes
 #'

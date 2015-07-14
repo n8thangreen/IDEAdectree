@@ -2,9 +2,9 @@
 % Please edit documentation in R/readFromDatabaseExtract.R
 \name{readFromDatabaseExtract}
 \alias{readFromDatabaseExtract}
-\title{Read from database extract.}
+\title{Read from Access IDEA database extract.}
 \usage{
-readFromDatabaseExtract(Patients)
+readFromDatabaseExtract()
 }
 \arguments{
 \item{Patients}{single table to update the data total database}

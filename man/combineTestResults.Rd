@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean-data-fns.R
 \name{combineTestResults}
 \alias{combineTestResults}
-\title{Combine test results.}
+\title{Combine test results}
 \usage{
 combineTestResults(test1, test2)
 }

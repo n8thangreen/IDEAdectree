@@ -13,6 +13,6 @@ cleanData(data)
 data
 }
 \description{
-\code{cleanData} cleans IDEA clinical data for analysis
+\code{cleanData} is a high-level function to clean IDEA clinical data for analysis
 }
 
