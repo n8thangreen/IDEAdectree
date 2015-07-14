@@ -25,8 +25,8 @@ estimateTimeToDiagnosis <- function(data){
 
   getDiagnosisTimeViaMeans <- function(data, i){
 
-    diagtime <- NA
-    diag.list <- list("Smear"="start.to.Smear", "Imaging"="start.to.Imaging", "Histology"="start.to.HistBiop",
+    diagtime  <- NA
+    diag.list <- list("Smear"="start.to.Smear", "Imaging"="start.to.Imaging", "Histology"="start.to.Histology",
                       "IGRA"="start.to.IGRA", "Culture"="start.to.TBcultorig",
                       # "Response to Treatment"="testDrug_diff_plus63days",
                       "Response to Treatment"="start.to.FU",
@@ -37,7 +37,7 @@ estimateTimeToDiagnosis <- function(data){
 
       if(is.TestUsedAsMeansOfDiag(data, i, testKeyword)) diagtime <- c(diagtime, data[i, diag.list[[testKeyword]]])
     }
-    max(diagtime, na.rm=TRUE) #min?
+    max(diagtime, na.rm=TRUE)
   }
 
 
@@ -46,7 +46,7 @@ estimateTimeToDiagnosis <- function(data){
     if (data$TBcult[i]=="POSITIVE")
       data$start.to.diag[i]  <- data$testCultorig_diff[i]
     else{
-      data$start.to.diag[i] <- getDiagnosisTimeViaMeans(data, i)}
+      data$start.to.diag[i]  <- getDiagnosisTimeViaMeans(data, i)}
   }
 
   data$start.to.diag[is.infinite(data$start.to.diag)] <- NA

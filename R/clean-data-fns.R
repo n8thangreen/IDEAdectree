@@ -7,6 +7,7 @@
 #'
 
 calcRiskFactorScore <- function(data){
+
   riskfacs <- c("WHOcut","jobrisk","numSymptoms","TBcont","PatientAge","Sex","Ethnclass","CurrHomeless","HIVpos")
   formula <- paste("TBconfirmed~", paste(riskfacs,collapse="+"), sep="")
   fit <- glm(formula, data=data, family = binomial, na.action = na.exclude)

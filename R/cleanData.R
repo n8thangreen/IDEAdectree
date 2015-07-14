@@ -16,8 +16,8 @@ cleanData <- function(data){
 
   names(data) <- gsub("testRes", "", names(data))
 
-  # Discretised Groups -----------------------------------------------
-  data$TSTcut <- cut(data$TST, breaks=c(0,6,15,100), right=FALSE)  #used by Yemesi
+  # Discretised groups --------------------------------------------------------
+  data$TSTcut <- cut(data$TST, breaks=c(0,6,15,100), right=FALSE)  #used by Yemesi @ Bham
 
 
   test.names <- c("QFN", "TSPOT", "TST", "TSTcut", "Smear", "TBcult", "CSF", "BAL",
@@ -66,11 +66,14 @@ cleanData <- function(data){
   test.names <- c("IGRA", "imaging", test.names, "PET", "TSTres", "IGRAorTST")
 
 
-
   data <- joinWithLookups(data)
 
 
   # Dates -------------------------------------------------------------------
+
+  threeWeeks <- 21
+  sixWeeks  <- 42
+  twoMonths <- 63
 
   TBdrugStart.names <- c("TBdrug1Start", "TBdrug2Start", "TBdrug3Start", "TBdrug4Start", "TBdrug5Start", "TBdrug6Start")
   TBDrugEnd.names <- c("TBDrug1End", "TBDrug2End", "TBDrug3End", "TBDrug4End", "TBDrug5End", "TBDrug6End")
@@ -114,7 +117,11 @@ cleanData <- function(data){
 
   data$TBDrugStart.min <- apply(data[,TBdrugStart.names], 1, min, na.rm=T)
   data$TBDrugEnd.max   <- apply(data[,TBDrugEnd.names], 1, max, na.rm=T)
-  data$testDate.min    <- apply(data[,testDate.names[-1]], 1, min, na.rm=T)   #exclude culture test date in this
+
+  data$testDate.min    <- apply(data[, c("DateConsent",testDate.names)], 1, function(x){
+                                  whichdates <- (difftime(x, x[1], units="days")+threeWeeks>0)
+                                  min(x[whichdates], na.rm=T)
+                                })
 
   data$TBDrugStart.min <- as.Date.POSIX(data$TBDrugStart.min)
   data$TBDrugEnd.max   <- as.Date.POSIX(data$TBDrugEnd.max)
@@ -125,7 +132,7 @@ cleanData <- function(data){
 
   # lower limits culture report dates -----------------------------------------
 
-  dur <- c(POSITIVE=1, NEGATIVE=42)   #days i.e. 6 weeks
+  dur <- c(POSITIVE=1, NEGATIVE=sixWeeks)   #days
   data$TBculttestDate.orig <- data$TBculttestDate
   dur.each <- as.vector(dur[as.character(data$TBcult)])
   data <- transform(data, TBculttestDate.resMin = testDate.min+dur.each)
@@ -154,6 +161,7 @@ cleanData <- function(data){
 
                     start.to.Smear = calcTimeToEvent(SmeartestDate),
                     start.to.HistBiop = calcTimeToEvent(HistBioptestDate),
+                    start.to.NeedleAsp = calcTimeToEvent(NeedleAsptestDate),
                     start.to.TBcultorig = calcTimeToEvent(TBculttestDate.orig),
                     start.to.BAL = calcTimeToEvent(BALtestDate),
                     start.to.PCR = calcTimeToEvent(PCRtestDate),
@@ -171,6 +179,7 @@ cleanData <- function(data){
 
   data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.MRI, data$start.to.PET, na.rm=T)
   data$start.to.IGRA <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
+  data$start.to.Histology <- pmax(data$start.to.HistBiop, data$start.to.NeedleAsp, na.rm=T)
 
   ## only interested in 2 month followup
   # data$start.to.FU[data$VisitFU!="2 month FU"] <- NA
@@ -191,7 +200,7 @@ cleanData <- function(data){
   data$TBDrug_diff <- difftime(data$TBDrugEnd.max, data$TBDrugStart.min, units="days")
 
   ## this isn't perfect because there may be treatment gaps but is an ok approximation
-  drugReviewPeriod <- 63     #i.e. ~2 months
+  drugReviewPeriod <- twoMonths
   data$treatResponse <- (as.numeric(data$TBDrug_diff) > drugReviewPeriod)
   data$testDrug_diff_plus63days <- data$testDrug_diff + drugReviewPeriod
 
