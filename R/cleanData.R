@@ -165,6 +165,7 @@ cleanData <- function(data){
                     start.to.TBcultorig = calcTimeToEvent(TBculttestDate.orig),
                     start.to.BAL = calcTimeToEvent(BALtestDate),
                     start.to.PCR = calcTimeToEvent(PCRtestDate),
+                    start.to.CXR = calcTimeToEvent(CXRtestDate),
                     start.to.TST = calcTimeToEvent(TSTtestDate),
                     start.to.CT = calcTimeToEvent(CTtestDate),
                     start.to.MRI = calcTimeToEvent(MRItestDate),
@@ -172,12 +173,13 @@ cleanData <- function(data){
                     start.to.QFN = calcTimeToEvent(QFNtestDate),
                     start.to.TSPOT = calcTimeToEvent(TSPOTtestDate),
 
-                    start.to.FU = calcTimeToEvent(DateVisitFU)
+                    start.to.FU = calcTimeToEvent(DateVisitFU),
+                    start.to.clinicalfeatures = 0 ##TODO##
   )
 
   # View(data.frame(data$PatientStudyID, data$testDate.min, data$DateVisitFU, data$DateVisitFU0, data$start.to.FU)[order(data$PatientStudyID),])  #check
 
-  data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.MRI, data$start.to.PET, na.rm=T)
+  data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.CXR, data$start.to.MRI, data$start.to.PET, na.rm=T)
   data$start.to.IGRA <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
   data$start.to.Histology <- pmax(data$start.to.HistBiop, data$start.to.NeedleAsp, na.rm=T)
 
@@ -204,11 +206,12 @@ cleanData <- function(data){
   data$treatResponse <- (as.numeric(data$TBDrug_diff) > drugReviewPeriod)
   data$testDrug_diff_plus63days <- data$testDrug_diff + drugReviewPeriod
 
-
   TBdrugStart.freq <- getDateFrequencies(TBdrugStart.names, data)
   TBDrugEnd.freq <- getDateFrequencies(TBDrugEnd.names, data)
   testDate.freq <- getDateFrequencies(testDate.names, data)
 
+  ## should we fill-in missing dates with 2 month estimates?
+  data$start.to.FU <- ifelse(is.na(data$start.to.FU), data$testDrug_diff_plus63days, data$start.to.FU)
 
   data <- estimateTimeToDiagnosis(data)
 

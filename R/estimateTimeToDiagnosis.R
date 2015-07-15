@@ -30,8 +30,9 @@ estimateTimeToDiagnosis <- function(data){
                       "IGRA"="start.to.IGRA", "Culture"="start.to.TBcultorig",
                       # "Response to Treatment"="testDrug_diff_plus63days",
                       "Response to Treatment"="start.to.FU",
-                      "PET"="start.to.PET", "BAL"="start.to.BAL", "PCR"="start.to.PCR", "TST"="start.to.TST")
-                      # "EBUS"=NA, "Clinical features"=NA, "Empiric"=NA)  #as date of presentation?
+                      "PET"="start.to.PET", "BAL"="start.to.BAL", "PCR"="start.to.PCR", "TST"="start.to.TST",#)
+                      "Clinical features"="start.to.clinicalfeatures") #as date of presentation?
+                      # "EBUS"=NA, "Empiric"=NA)
 
     for (testKeyword in names(diag.list)){
 
