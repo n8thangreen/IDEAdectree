@@ -10,8 +10,8 @@
 calcPatientCostofTests <- function(testdata){
     ## call: calcPatientCostofTests(data[,c("TBcult","Smear")])
 
-#     testdata <- data.frame(CXR=c("Not tested","POSITIVE","POSITIVE"),
-#                            QFN=c("POSITIVE","Not tested","NEGATIVE"))
+#     testdata <- data.frame(TBcult=c("Not tested","POSITIVE","POSITIVE"),
+#                            Smear=c("POSITIVE","Not tested","NEGATIVE"))
 
     testcosts <- c(TBcult=22.29, #10 #London RC of P of. Tuberculosis: clinical diagnosis and management of tuberculosis, and measures for its prevention and control. 2006;(November 2010):1–308.
                    Smear=1.56, #HTA Systematic review, meta-analysis and economic modelling of molecular diagnostic tests for antibiotic resistance in TB.
@@ -20,14 +20,14 @@ calcPatientCostofTests <- function(testdata){
                    TSPOT=82, #Local lab cost (IDEA health econ analysis plan)
                    QFN=45, #52 #
                    CXR=28, #NCCCC, Tuberculosis: appendices. London: Royal College of Physicians, 2006;National Collaborating Centre for Chronic Conditions. TB Partial Update: Cost-effectiveness analysis of interferon gamma release assay (IGRA) testing for latent tuberculosis. London: NICE, 2010.
-                   CSF=1, #
-                   BAL=1, #
-                   HistBiop=1, #
-                   NeedleAsp=1, #
-                   PCR=1, #
-                   CT=1, #
-                   MRI=1, #
-                   PET=1) #
+                   CSF=0, #
+                   BAL=23.24, #St Marys R & D office
+                   HistBiop=25, #St Marys R & D office
+                   NeedleAsp=90.21, #St Marys R & D office
+                   PCR=202.45, #St Marys R & D office
+                   CT=300, #St Marys R & D office
+                   MRI=375, #St Marys R & D office
+                   PET=713) #St Marys R & D office
 
     whichTests <- function(x,testdata) colnames(testdata)[x=="POSITIVE" | x=="NEGATIVE" | x=="INDETERMINATE"]
     apply(testdata, 1, function(x) sum(testcosts[whichTests(x,testdata)], na.rm=TRUE))

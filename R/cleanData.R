@@ -71,9 +71,9 @@ cleanData <- function(data){
 
   # Dates -------------------------------------------------------------------
 
-  threeWeeks <- 21
-  sixWeeks  <- 42
-  twoMonths <- 63
+  threeWeeks <- 21L
+  sixWeeks   <- 42L
+  twoMonths  <- 63L
 
   TBdrugStart.names <- c("TBdrug1Start", "TBdrug2Start", "TBdrug3Start", "TBdrug4Start", "TBdrug5Start", "TBdrug6Start")
   TBDrugEnd.names <- c("TBDrug1End", "TBDrug2End", "TBDrug3End", "TBDrug4End", "TBDrug5End", "TBDrug6End")
@@ -173,15 +173,24 @@ cleanData <- function(data){
                     start.to.QFN = calcTimeToEvent(QFNtestDate),
                     start.to.TSPOT = calcTimeToEvent(TSPOTtestDate),
 
-                    start.to.FU = calcTimeToEvent(DateVisitFU),
-                    start.to.clinicalfeatures = 0 ##TODO##
+                    start.to.other1 = calcTimeToEvent(Othertest1Date),
+                    start.to.other2 = calcTimeToEvent(Othertest2Date),
+
+                    start.to.FU = calcTimeToEvent(DateVisitFU)
   )
 
   # View(data.frame(data$PatientStudyID, data$testDate.min, data$DateVisitFU, data$DateVisitFU0, data$start.to.FU)[order(data$PatientStudyID),])  #check
 
   data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.CXR, data$start.to.MRI, data$start.to.PET, na.rm=T)
   data$start.to.IGRA <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
+  data$start.to.other <- pmax(data$start.to.other1, data$start.to.other2, na.rm=T)
+
+  #NeedleAsp isnt a test but a sampling technique so could be used for other test
   data$start.to.Histology <- pmax(data$start.to.HistBiop, data$start.to.NeedleAsp, na.rm=T)
+
+  data$start.to.clinicalfeatures <- with(data, pmax(start.to.TBcultorig, start.to.Smear, start.to.Histology,
+                                                    start.to.BAL, start.to.PCR, start.to.TST,
+                                                    start.to.Imaging, start.to.IGRA, start.to.other, na.rm=T))
 
   ## only interested in 2 month followup
   # data$start.to.FU[data$VisitFU!="2 month FU"] <- NA
@@ -208,7 +217,7 @@ cleanData <- function(data){
 
   TBdrugStart.freq <- getDateFrequencies(TBdrugStart.names, data)
   TBDrugEnd.freq <- getDateFrequencies(TBDrugEnd.names, data)
-  testDate.freq <- getDateFrequencies(testDate.names, data)
+  testDate.freq  <- getDateFrequencies(testDate.names, data)
 
   ## should we fill-in missing dates with 2 month estimates?
   data$start.to.FU <- ifelse(is.na(data$start.to.FU), data$testDrug_diff_plus63days, data$start.to.FU)
@@ -248,9 +257,9 @@ cleanData <- function(data){
   ### is this always a present level?
 
   data$IGRA <- as.factor(data$IGRA)
-  data$PET <- as.factor(data$PET)
+  data$PET  <- as.factor(data$PET)
   data$imaging <- as.factor(data$imaging)
-  data$TSTres <- as.factor(data$TSTres)
+  data$TSTres  <- as.factor(data$TSTres)
   data$IGRAorTST <- as.factor(data$IGRAorTST)
 
   data <- addLevel_Nottaken(data, c("IGRA","imaging","Smear","TBcult","imaging","CXR","CT","CSF","BAL","QFN","TSPOT",
@@ -387,6 +396,9 @@ cleanData <- function(data){
   data <- rmPatientsInCleaning(data)
 
   data <- calcRiskFactorScore(data)
+
+  data <- data.frame(data, totalcost=calcPatientCostofTests(data[,
+                      c("TBcult", "Smear", "IGRA", "TST", "TSPOT", "QFN", "CXR", "CSF", "BAL", "HistBiop", "NeedleAsp", "PCR", "CT", "MRI", "PET")]))
 
   data <- droplevels(data)
 

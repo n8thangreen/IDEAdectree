@@ -33,18 +33,28 @@ rmPatientsInCleaning <- function(data){
   ## `complete' records only before cut-off date
   data <- data[as.Date.POSIX(data$DateConsent)<=as.Date("2013-08-31") & !is.na(data$DateConsent),]
 
-  data <- data[data$Exclude=="No" | is.na(data$Exclude) | data$Exclude=="",]
+  data <- subset(data, (Exclude=="No"| Exclude=="" | is.na(Exclude)))
 
   ## non-EPTB only
   ## do we really want the cases that are _suspected_ of being PTB instead?
-  data <- data[data$EPTBorPTB=="PTB" | data$EPTBorPTB=="EPTB;PTB" | is.na(data$EPTBorPTB) | data$EPTBorPTB=="",]
+  data <- subset(data, (EPTBorPTB=="PTB" | EPTBorPTB=="EPTB;PTB" | EPTBorPTB=="" | is.na(EPTBorPTB)))
+
+  ## Heatherwood and Wrexham Park Hospital NHS Foundation Trust
+  data <- subset(data, SiteID!="H")
+
+  ## patient was TRANSFERRED TO LEICESTER FOR FU and got his study number changed to L058
+  data <- subset(data, PatientstudyID!="B048")
+
+  ## decided not to give blood,  probably patient changed her mind and therefore did not ENROLL in the study
+  data <- subset(data, PatientstudyID!="B117")
 
   ## not on our diagnostic pathway
   ### patients treated _before_ first test
-  data <- data[data$preTestDrug==FALSE | is.na(data$preTestDrug),]
+  data <- subset(data, (preTestDrug==FALSE | is.na(preTestDrug)))
 
   ### confirmed diagnosis before first test
-  data <- data[data$testDiagCon_diff>=0 | is.na(data$testDiagCon_diff),]
+  ## don't use this anymore- unreliable
+  # data <- data[data$testDiagCon_diff>=0 | is.na(data$testDiagCon_diff),]
 
   data
 }
@@ -79,8 +89,7 @@ fillInEndOfTreatmentDate <- function(data){
 #' @return updated full database
 #'
 
-joinLevels <- function (codes, lookuplist)
-{
+joinLevels <- function (codes, lookuplist){
     if(!is.factor(codes)){break}
     lfac <- levels(codes)
     othrlevs <- lfac[!lfac %in% unlist(lookuplist)]
@@ -202,6 +211,7 @@ combineTestResults <- function(test1, test2){
     res
 }
 
+
 #' Get the Date Frequencies
 #'
 #' \code{getDateFrequencies} returns joined tables of inputs and predicted outcomes
@@ -226,6 +236,4 @@ getDateFrequencies <- function(colnames, data){
     }
 df
 }
-
-
 
