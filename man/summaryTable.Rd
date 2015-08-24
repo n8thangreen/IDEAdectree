@@ -2,19 +2,19 @@
 % Please edit documentation in R/summaryTable.R
 \name{summaryTable}
 \alias{summaryTable}
-\title{summary Table}
+\title{summaryTable}
 \usage{
 summaryTable(datat, dir = NULL)
 }
 \arguments{
-\item{data}{Individual patient records}
+\item{dir}{filename to save output}
 
-\item{allgrids}{The idealised pathway look-up tables}
+\item{data}{Individual patient records}
 }
 \value{
-The joined tables with aggregated outcome wrt Dosanjh categories
+dataframe
 }
 \description{
-\code{summaryTable}
+\code{summaryTable} gives basica statistics for patient groupings in IDEA data extract
 }
 

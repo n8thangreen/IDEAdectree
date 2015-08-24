@@ -1,10 +1,10 @@
-#' summary Table
+#' summaryTable
 #'
-#' \code{summaryTable}
+#' \code{summaryTable} gives basica statistics for patient groupings in IDEA data extract
 #'
 #' @param data Individual patient records
-#' @param allgrids The idealised pathway look-up tables
-#' @return The joined tables with aggregated outcome wrt Dosanjh categories
+#' @param dir filename to save output
+#' @return dataframe
 
 summaryTable <- function(datat, dir=NULL){
     ## summaryTable(data)

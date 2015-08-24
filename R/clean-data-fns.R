@@ -43,10 +43,10 @@ rmPatientsInCleaning <- function(data){
   data <- subset(data, SiteID!="H")
 
   ## patient was TRANSFERRED TO LEICESTER FOR FU and got his study number changed to L058
-  data <- subset(data, PatientstudyID!="B048")
+  data <- subset(data, PatientStudyID!="B048")
 
   ## decided not to give blood,  probably patient changed her mind and therefore did not ENROLL in the study
-  data <- subset(data, PatientstudyID!="B117")
+  data <- subset(data, PatientStudyID!="B117")
 
   ## not on our diagnostic pathway
   ### patients treated _before_ first test
