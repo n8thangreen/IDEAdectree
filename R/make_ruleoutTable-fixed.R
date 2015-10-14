@@ -1,6 +1,6 @@
-#' make.ruleoutTable
+#' make.ruleoutTable.fixed
 #'
-#' \code{make.ruleoutTable} creates the times and costs of a diagnositic pathway for
+#' \code{make.ruleoutTable.fixed} creates the times and costs of a diagnositic pathway for
 #' suspected active TB with and without an initial rule-out test, split by Dosanjh category.
 #'
 #' @param thresh test sensitivity and specificity
@@ -15,14 +15,18 @@
 #' @param cat4percent percent of patients in Dosanjh category 4
 #' @param comb combined sensitivity, specificity and rule-out test cost array
 #' @param cat3TB are Dosanjh category 3 patients all active TB?
-#' @param cat4propfollowup proportion of negative Dosanjh category 4 patients, not immediately on standard pathway, who are followed-up at 6 weeks (alpha)
-#' @param prop_highrisk proportion of negative active TB patients put immediately on standard pathway (gamma)
+#' @param cat4propfollowup proportion of negative Dosanjh category 4 patients, not immediately on standard pathway, who are followed-up at 6 weeks (alpha). We assume that all active TB cases are certain to be followed-up.
+#' @param prop_highrisk proportion of negative rule-out test patients put immediately on standard pathway (gamma)
+#' @param stat Which statistic to use for time and cost estimate (e.g. Mean, Median, 1st Qu.)
+#' @param model Which model structure/tree design to use
+#' (\code{highriskAtStart} is remove randomly selected proportion before rule-out test,
+#' \code{testFirst} is test everyone first)
 #' @return list
 
 
-make.ruleoutTable <- function(
+make.ruleoutTable.fixed <- function(
   thresh = seq(from=1, to=0.7, by=-0.01),   #test sensitivity and specificity
-  Ctest = c(50, 100),
+  Ctest = c(10, 50),
   FNcost = 0,   #false negative cost of true diagnosis or cost to start of standard pathway
   FNtime = 42L,  #6 weeks #false negative time to true diagnosis or start of pathway
   ruleouttime = 1L,
@@ -35,8 +39,8 @@ make.ruleoutTable <- function(
   cat3TB=TRUE,
   cat4propfollowup=0,
   prop_highrisk=0.72,
-  stat="Mean",
-  model="highriskAtStart"){
+  stat="Median",
+  model="testFirst"){
 
 
   ## non-bootstrap sampled patients
@@ -69,17 +73,20 @@ make.ruleoutTable <- function(
   }
 
 
+
   calcCostEqn <- function(model, cat, cat3TB, cat4propfollowup, prop_highrisk){
     if(model=="highriskAtStart"){
       return(calc.costeqn.highriskAtStart(cat, cat3TB, cat4propfollowup, prop_highrisk))
-    }else{
-      return(calc.costeqn.testFirst(cat, cat3TB, cat4propfollowup, prop_highrisk))}
+    }else if(model=="testFirst"){
+      return(calc.costeqn.testFirst(cat, cat3TB, cat4propfollowup, prop_highrisk))
+    }else{stop("undefined model")}
   }
   calcTimeToDiagEqn <- function(model, cat, cat3TB, cat4propfollowup, prop_highrisk){
     if(model=="highriskAtStart"){
       return(calc.timeToDiageqn.highriskAtStart(cat, cat3TB, cat4propfollowup, prop_highrisk))
-    }else{
-      return(calc.timeToDiageqn.testFirst(cat, cat3TB, cat4propfollowup, prop_highrisk))}
+    }else if(model=="testFirst"){
+      return(calc.timeToDiageqn.testFirst(cat, cat3TB, cat4propfollowup, prop_highrisk))
+    }else{stop("undefined model")}
   }
 
 
@@ -89,6 +96,17 @@ make.ruleoutTable <- function(
   NumDosanjh <- table(data$DosanjhGrouped)
   NumDosanjh[4] <- npatients/100*cat4percent
   NumDosanjh[1:3] <- (npatients-NumDosanjh[4])*prop.table(NumDosanjh[1:3])  #at the moment assumes that cat 3 are TB. dont think it makes much difference
+
+
+  NumDosanjh.highrisk <- sum(data$DosanjhGrouped==1 & data$riskfacScore>prop_highrisk, na.rm=T)
+  NumDosanjh.highrisk[2] <- sum(data$DosanjhGrouped==1 & data$riskfacScore>prop_highrisk, na.rm=T)
+  NumDosanjh.highrisk[3] <- sum(data$DosanjhGrouped==1 & data$riskfacScore>prop_highrisk, na.rm=T)
+  NumDosanjh.highrisk[4] <- sum(data$DosanjhGrouped==1 & data$riskfacScore>prop_highrisk, na.rm=T)
+
+  NumDosanjh.lowrisk <- NumDosanjh - NumDosanjh.highrisk
+
+
+
 
   if(is.na(comb)){
     comb <- expand.grid(spec=thresh, sens=thresh, testcost=Ctest)
@@ -155,10 +173,10 @@ make.ruleoutTable <- function(
   # time #
   ########
 
-  pwaycost.old    <- summary(data$start.to.diag[data$DosanjhGrouped=="1"], na.rm=T)[stat]
-  pwaycost.old[2] <- summary(data$start.to.diag[data$DosanjhGrouped=="2"], na.rm=T)[stat]
-  pwaycost.old[3] <- summary(data$start.to.diag[data$DosanjhGrouped=="3"], na.rm=T)[stat]
-  pwaycost.old[4] <- summary(data$start.to.diag[data$DosanjhGrouped=="4"], na.rm=T)[stat]
+  daysToDiag.old    <- summary(data$start.to.diag[data$DosanjhGrouped=="1"], na.rm=T)[stat]
+  daysToDiag.old[2] <- summary(data$start.to.diag[data$DosanjhGrouped=="2"], na.rm=T)[stat]
+  daysToDiag.old[3] <- summary(data$start.to.diag[data$DosanjhGrouped=="3"], na.rm=T)[stat]
+  daysToDiag.old[4] <- summary(data$start.to.diag[data$DosanjhGrouped=="4"], na.rm=T)[stat]
 
 
   daysToDiag.new.notsampled <- list()
@@ -194,12 +212,12 @@ make.ruleoutTable <- function(
     testcostgain <- (1-prop_highrisk)*numRuledOut.new[[4]]*pwaycost.old[4]
                       + ifelse(cat3TB, 0, (1-prop_highrisk)*numRuledOut.new[[3]]*pwaycost.old[3])
     timegain <- (1-prop_highrisk)*(numRuledOut.new[[4]]*daysToDiag.old[4] - NumDosanjh[4]*ruleouttime)
-                      + ifelse(cat3TB, 0, (1-prop_highrisk)*(numRuledOut.new[[3]]*daysToDaig.old[3] - NumDosanjh[3]*ruleouttime))
+                      + ifelse(cat3TB, 0, (1-prop_highrisk)*(numRuledOut.new[[3]]*daysToDiag.old[3] - NumDosanjh[3]*ruleouttime))
     testcostloss <- (1-prop_highrisk)*testcost*npatients
     timeloss <- (1-prop_highrisk)*((numRuledOut.new[[1]]+numRuledOut.new[[2]])*FNtime + sum(NumDosanjh[1:2])*ruleouttime) +
                   ifelse(cat3TB, (1-prop_highrisk)*(numRuledOut.new[[3]]*FNtime + NumDosanjh[3]*ruleouttime), 0)
     calcCruleout_hat <- function(totalcostgain, timecostloss, npatients) (totalcostgain-timecostloss)/((1-prop_highrisk)*npatients)
-    }else{
+    }else if(model=="testFirst"){
     testcostgain <- (1-prop_highrisk)*(1-cat4propfollowup)*
                                   (numRuledOut.new[[4]]*pwaycost.old[4] + ifelse(cat3TB,0, numRuledOut.new[[3]]*pwaycost.old[3]))
     timegain <- numRuledOut.new[[4]]*(1-prop_highrisk)*((1-cat4propfollowup)*daysToDiag.old[4] - (cat4propfollowup*FNtime)) -
@@ -242,7 +260,7 @@ make.ruleoutTable <- function(
 
 
   ##TODO##
-  out.costbyDosnajh <- round(data.frame(#scenarioNum=1:length(sensitivity),
+  out.costbyDosanjh <- round(data.frame(#scenarioNum=1:length(sensitivity),
                                           testcost=testcost,
                                           #FNcost=FNcost,
                                           sensitivity=sensitivity,
@@ -268,7 +286,7 @@ make.ruleoutTable <- function(
                                           diff_cost4=diff_cost.old.new.notsampled[[4]],
                                           diff_cost.total=diff_cost.old.new.notsampled.total), 2)
 
-  out.diagtimebyDosnajh <- round(data.frame(#scenarioNum=1:length(sensitivity),
+  out.diagtimebyDosanjh <- round(data.frame(#scenarioNum=1:length(sensitivity),
                                               sensitivity=sensitivity,
                                               specificity=specificity,
                                               #FNtime=FNtime,
@@ -294,10 +312,10 @@ make.ruleoutTable <- function(
                                               diff_daysToDiag4=diff_daysToDiag.notsampled[[4]],
                                               diff_daysToDiag.total=diff_daysToDiag.notsampled.total), 2)
 
-  # write.csv(out.costbyDosnajh, "../../../output_data/ruleout-costtable-notsampled.csv")
-  # write.csv(out.diagtimebyDosnajh, "../../../output_data/ruleout-diagtimetable-notsampled.csv")
+  # write.csv(out.costbyDosanjh, "../../../output_data/ruleout-costtable-notsampled.csv")
+  # write.csv(out.diagtimebyDosanjh, "../../../output_data/ruleout-diagtimetable-notsampled.csv")
 
-  list(out.combined, out.costbyDosnajh, out.diagtimebyDosnajh)
+  list(combined=out.combined, costbyDosanjh=out.costbyDosanjh, diagtimebyDosanjh=out.diagtimebyDosanjh)
 }
 
 
@@ -352,42 +370,42 @@ calc.meancost.new <- function(cat){
 ##############
 ## plotting ##
 ##############
-
-plot.surface_smooth <- function(out){
-
-  axis <- 1:(length(out[[1]]$Cruleout_hat)/length(Ctest))  # unique sens/spec
-  d <- data.frame(Sensitivity=out[[1]]$sensitivity[axis], Specificity=out[[1]]$specificity[axis], C=out[[1]]$Cruleout_hat[axis])
-  x <- matrix(out[[1]]$Cruleout_hat[axis], ncol=length(unique(out[[1]]$sensitivity[axis])), nrow=length(unique(out[[1]]$sensitivity[axis])))
-
-  ## lattice pkg
-  #   image(x=rev(thresh), y=rev(thresh), z=x)
-  #   contour(x=rev(thresh), y=rev(thresh), z=x[], add = T)
-  # lattice::levelplot(x)
-  # lattice::contourplot(x,)
-
-  # ggplot(d, aes(sens, spec, fill=C)) + geom_tile()+scale_fill_gradient(limits = c(100, 500), low = "yellow", high = "red")
-  ggplot(d, aes(Sensitivity,Specificity,z=C)) + geom_tile(aes(fill=C))+
-    # stat_contour(bins=6, aes(Sensitivity,Specificity,z=C), color="black", size=0.6)+
-    stat_contour(aes(Sensitivity,Specificity,z=C, colour="..level.."), color="black", size=0.6, breaks=seq(-100,300,by=10))+
-    scale_fill_gradientn(colours=brewer.pal(6,"YlOrRd")) + theme_bw() #, limits=c(40,100)
-  # direct.label(v)
-}
-
-plot.surface_solid <- function(out){
-  # http://stackoverflow.com/questions/10981324/ggplot2-heatmap-with-colors-for-ranged-values
-
-  axis <- 1:(length(out[[1]]$Cruleout_hat)/length(Ctest))  # unique sens/spec
-  mat <- data.frame(Sensitivity=out[[1]]$sensitivity[axis], Specificity=out[[1]]$specificity[axis], C=out[[1]]$Cruleout_hat[axis])
-  len <- 8
-  brks <- cut(mat$C,breaks=seq(0,200,len=len))
-  brks <- gsub(","," - ",brks,fixed=TRUE)
-  mat$brks <- gsub("\\(|\\]","",brks)  # reformat guide labels
-
-  ggplot(mat,aes(Sensitivity, Specificity))+
-    geom_tile(aes(fill=brks))+
-    scale_fill_manual("Z", values=brewer.pal(len,"YlOrRd"))+
-    # scale_fill_manual(values = colorRampPalette(c("orange", "yellow"))(len))+   #if len>9
-    scale_x_continuous(expand=c(0,0))+
-    scale_y_continuous(expand=c(0,0))+
-    coord_fixed()
-}
+#
+# plot.surface_smooth <- function(out){
+#
+#   axis <- 1:(length(out[[1]]$Cruleout_hat)/length(Ctest))  # unique sens/spec
+#   d <- data.frame(Sensitivity=out[[1]]$sensitivity[axis], Specificity=out[[1]]$specificity[axis], C=out[[1]]$Cruleout_hat[axis])
+#   x <- matrix(out[[1]]$Cruleout_hat[axis], ncol=length(unique(out[[1]]$sensitivity[axis])), nrow=length(unique(out[[1]]$sensitivity[axis])))
+#
+#   ## lattice pkg
+#   #   image(x=rev(thresh), y=rev(thresh), z=x)
+#   #   contour(x=rev(thresh), y=rev(thresh), z=x[], add = T)
+#   # lattice::levelplot(x)
+#   # lattice::contourplot(x,)
+#
+#   # ggplot(d, aes(sens, spec, fill=C)) + geom_tile()+scale_fill_gradient(limits = c(100, 500), low = "yellow", high = "red")
+#   ggplot(d, aes(Sensitivity,Specificity,z=C)) + geom_tile(aes(fill=C))+
+#     # stat_contour(bins=6, aes(Sensitivity,Specificity,z=C), color="black", size=0.6)+
+#     stat_contour(aes(Sensitivity,Specificity,z=C, colour="..level.."), color="black", size=0.6, breaks=seq(-100,300,by=10))+
+#     scale_fill_gradientn(colours=brewer.pal(6,"YlOrRd")) + theme_bw() #, limits=c(40,100)
+#   # direct.label(v)
+# }
+#
+# plot.surface_solid <- function(out){
+#   # http://stackoverflow.com/questions/10981324/ggplot2-heatmap-with-colors-for-ranged-values
+#
+#   axis <- 1:(length(out[[1]]$Cruleout_hat)/length(Ctest))  # unique sens/spec
+#   mat <- data.frame(Sensitivity=out[[1]]$sensitivity[axis], Specificity=out[[1]]$specificity[axis], C=out[[1]]$Cruleout_hat[axis])
+#   len <- 8
+#   brks <- cut(mat$C,breaks=seq(0,200,len=len))
+#   brks <- gsub(","," - ",brks,fixed=TRUE)
+#   mat$brks <- gsub("\\(|\\]","",brks)  # reformat guide labels
+#
+#   ggplot(mat,aes(Sensitivity, Specificity))+
+#     geom_tile(aes(fill=brks))+
+#     scale_fill_manual("Z", values=brewer.pal(len,"YlOrRd"))+
+#     # scale_fill_manual(values = colorRampPalette(c("orange", "yellow"))(len))+   #if len>9
+#     scale_x_continuous(expand=c(0,0))+
+#     scale_y_continuous(expand=c(0,0))+
+#     coord_fixed()
+# }
