@@ -13,6 +13,6 @@ create.indivpathmatrix(data)
 pathdata
 }
 \description{
-\code{create.indivpathmatrix}
+\code{create.indivpathmatrix} create a table of each distinct pathway through the decision tree
 }
 

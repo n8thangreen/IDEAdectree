@@ -4,12 +4,12 @@
 \alias{make.ruleoutTable.pre}
 \title{make.ruleoutTable.pre}
 \usage{
-make.ruleoutTable.pre(thresh = seq(from = 1, to = 0.5, by = -0.01),
-  Ctest = c(1, 100, 200, 300, 400, 500, 600), FNcost = 0, FNtime = 42,
-  ruleouttime = 1L, pathreturn = 1L, qaly = 0.67, A = 55,
-  npatients = nrow(data), cat4percent = table(data$DosanjhGrouped)[4] *
-  100/npatients, comb = NA, cat3TB = TRUE, cat4propfollowup = 0,
-  prop_highrisk = 0.4, stat = "Median", model = "pretest.fixed")
+make.ruleoutTable.pre(thresh = seq(from = 1, to = 0.9, by = -0.01),
+  Ctest = c(1, 100), FNcost = 0, FNtime = 42, ruleouttime = 1L,
+  pathreturn = 1L, qaly = 0.67, A = 55, npatients = nrow(data),
+  cat4percent = table(data$DosanjhGrouped)[4] * 100/npatients, comb = NA,
+  cat3TB = TRUE, cat4propfollowup = 0, prop_highrisk = 0.4,
+  stat = "Median", model = "pretest.fixed")
 }
 \arguments{
 \item{thresh}{test sensitivity and specificity}

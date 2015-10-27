@@ -3,19 +3,17 @@
 #' \code{estimateTimeToDiagnosis} estimates time to diagnosis for each patient using simple pre-defined rules.
 #' This time is not directly available in the data but can be got at in most cases indirectly.
 #'
+#' The rules for estimating time to diagnosis are:
+#' 1) If culture +ve then \code{min}(report time, start treatment) [previously, take report time only.]
+#' 2) What is means of diagnosis? Use corresponding time.
+#' 3) \code{min(DateDiagCon, lasttestDate)}.
+#' 4) If still \code{NA} then use \code{DateDiagCon} value.
+#'
 #' @param data Individual patient records
-#' @return data with the start.to.diag column appended
+#' @return data with the \code{start.to.diag} column appended
 
 
 estimateTimeToDiagnosis <- function(data){
-  ## call: data <- estimateTimeToDiagnosis(data)
-
-  ## the rules for estimating time to diagnosis are:
-  ## 1) If culture +ve then take report time
-  ## 2) What is means of diagnosis? Use corresponding time.
-  ## 3) min{DateDiagCon, lasttestDate}
-  ## 4) If still NA then use DateDiagCon value
-
 
   is.TestUsedAsMeansOfDiag <- function(data, i, testKeyword){
 
@@ -32,7 +30,7 @@ estimateTimeToDiagnosis <- function(data){
                       "Response to Treatment"="start.to.FU", "OTHER"="start.to.other",
                       "PET"="start.to.PET", "BAL"="start.to.BAL", "PCR"="start.to.PCR", "TST"="start.to.TST",#)
                       "Clinical features"="start.to.clinicalfeatures") #as date of presentation?
-                      # "EBUS"=NA, "Empiric"=NA)
+    # "EBUS"=NA, "Empiric"=NA)
 
     for (testKeyword in names(diag.list)){
 
@@ -44,10 +42,11 @@ estimateTimeToDiagnosis <- function(data){
 
   for (i in 1:nrow(data)){
 
-    if (data$TBcult[i]=="POSITIVE")
-      data$start.to.diag[i]  <- data$start.to.TBcultorig[i]
-    else{
-      data$start.to.diag[i]  <- getDiagnosisTimeViaMeans(data, i)}
+    if (data$TBcult[i]=="POSITIVE"){
+      # data$start.to.diag[i] <- data$start.to.TBcultorig[i]
+      data$start.to.diag[i] <- min(0, data$testDrug_diff[i], data$start.to.TBcultorig[i])
+    }else{
+      data$start.to.diag[i] <- getDiagnosisTimeViaMeans(data, i)}
   }
 
   data$start.to.diag[is.infinite(data$start.to.diag)] <- NA
@@ -56,12 +55,10 @@ estimateTimeToDiagnosis <- function(data){
 
   tooBigLimit <- 130
   tooBig <- data$start.to.diag>tooBigLimit & data$testDiagCon_diff<tooBigLimit &
-            !is.na(data$start.to.diag) & !is.na(data$testDiagCon_diff)
+    !is.na(data$start.to.diag) & !is.na(data$testDiagCon_diff)
   data$start.to.diag[tooBig] <- data$testDiagCon_diff[tooBig]
   data$start.to.diag[is.na(data$start.to.diag)] <- data$testDiagCon_diff[is.na(data$start.to.diag)]
 
   invisible(data)
 }
-
-
 

@@ -1,7 +1,7 @@
 
 #' create.indivpathmatrix
 #'
-#' \code{create.indivpathmatrix}
+#' \code{create.indivpathmatrix} create a table of each distinct pathway through the decision tree
 #'
 #' @param data
 #' @return pathdata
@@ -148,21 +148,90 @@ join.stratifiedOutcomeTables <- function(data, outcome){
 
 get.pooledtimeandcost <- function(){
 
-
+##TODO##
 }
 
+
+#' maketable.Dosanjh_TimeCost
+#'
+#' \code{maketable.Dosanjh_TimeCost}
+#'
+#' @param data
+#' @return matrix
+#'
 
 maketable.Dosanjh_TimeCost <- function(data){
 
-  tab1 <- as.matrix(aggregate(start.to.diag~DosanjhGrouped, data=data, summary, na.rm=T))
+  tab.time <- as.matrix(aggregate(start.to.diag~DosanjhGrouped, data=data, summary, na.rm=T))
   # tab <- cbind(tab, sd=as.matrix(aggregate(start.to.diag~DosanjhGrouped, data=data, sd, na.rm=T))[,2])
-  tab1 <- rbind(tab, c("",summary(data$start.to.diag, na.rm=T)[-7])) #, sd=sd(data$start.to.diag, na.rm=T)))
+  tab.time <- rbind(tab.time, c("",summary(data$start.to.diag, na.rm=T)[-7])) #, sd=sd(data$start.to.diag, na.rm=T)))
 
-  tab2 <- as.matrix(aggregate(totalcost~DosanjhGrouped, data=data, summary, na.rm=T))
+  tab.cost <- as.matrix(aggregate(totalcost~DosanjhGrouped, data=data, summary, na.rm=T))
   # tab <- cbind(tab, sd=as.matrix(aggregate(start.to.diag~DosanjhGrouped, data=data, sd, na.rm=T))[,2])
-  tab2 <- rbind(tab, c("",summary(data$totalcost, na.rm=T)[-7])) #, sd=sd(data$start.to.diag, na.rm=T)))
+  tab.cost <- rbind(tab.cost, c("",summary(data$totalcost, na.rm=T)[-7])) #, sd=sd(data$start.to.diag, na.rm=T)))
 
-  cbind(tab1, tab2[,-1])
+  return(cbind(tab.time[tab.time[,"DosanjhGrouped"]%in%c("1","2","3","4"),],
+               tab.cost[tab.cost[,"DosanjhGrouped"]%in%c("1","2","3","4"),-1]))
 }
+
+
+#' make.testFreqTable
+#'
+#' \code{make.testFreqTable}
+#'
+#' @param data
+#' @return matrix
+
+make.testFreqTable <- function(data){
+
+  test.names <- c("TBcult", "QFN", "TSPOT", "TSTcut", "Smear", "CSF", "BAL",
+                  "HistBiop", "NeedleAsp", "PCR", "CXR", "CT", "MRI", "PET")
+
+  data[,test.names] <- (data[,test.names]!="Not taken")
+
+  nums <- aggregate(data[test.names], list(data$DosanjhGrouped), sum)
+  names(nums) <- c("Dosanjh category", test.names)
+
+  props <- as.matrix(round(nums[,test.names]/aggregate(data[test.names], list(data$DosanjhGrouped), length)[,test.names],2))
+  nums <- as.matrix(nums)
+  out <- matrix(paste(nums[,test.names], " (", props[,test.names], ")", sep=""), nrow=4)
+  colnames(out) <- test.names
+  out <- cbind(Dosanjh=c(1,2,3,4), out)
+  out
+}
+
+
+#' make.testPerformanceMetricsTable
+#'
+#' \code{make.testPerformanceMetricsTable}
+#'
+#' @param prop_highriskVECTOR
+#' @param specificityVECTOR
+#' @return matrix
+
+make.testPerformanceMetricsTable <- function(prop_highriskVECTOR=c(0.2,0.4,0.6), specificityVECTOR=c(0.9,0.95,0.99)){
+
+  out <- list()
+  TN <- FN <- PPV <- NPV <- accuracy <- NULL
+
+  for(i in 1:length(prop_highriskVECTOR)){
+
+    out[[i]] <- make.ruleoutTable.pre(prop_highrisk=prop_highriskVECTOR[i])
+
+    for (j in 1:length(specificityVECTOR)){
+
+      TN <- c(TN, unique(out[[i]]$combinedDosanjh$numTN[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
+      FN <- c(FN, unique(out[[i]]$combinedDosanjh$numFN[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
+      accuracy <- c(accuracy, unique(out[[i]]$combinedDosanjh$Accuracy[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
+      PPV <- c(PPV, unique(out[[i]]$combinedDosanjh$PPV[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
+      NPV <- c(NPV, unique(out[[i]]$combinedDosanjh$NPV[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
+    }
+  }
+
+  out <- round(rbind(TN,FN,accuracy,PPV,NPV),2)
+  colnames(out) <- as.vector(outer(specificityVECTOR, prop_highriskVECTOR, paste))
+  out
+}
+
 
 

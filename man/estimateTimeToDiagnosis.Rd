@@ -10,10 +10,17 @@ estimateTimeToDiagnosis(data)
 \item{data}{Individual patient records}
 }
 \value{
-data with the start.to.diag column appended
+data with the \code{start.to.diag} column appended
 }
 \description{
 \code{estimateTimeToDiagnosis} estimates time to diagnosis for each patient using simple pre-defined rules.
 This time is not directly available in the data but can be got at in most cases indirectly.
+}
+\details{
+The rules for estimating time to diagnosis are:
+1) If culture +ve then \code{min}(report time, start treatment) [previously, take report time only.]
+2) What is means of diagnosis? Use corresponding time.
+3) \code{min(DateDiagCon, lasttestDate)}.
+4) If still \code{NA} then use \code{DateDiagCon} value.
 }
 
