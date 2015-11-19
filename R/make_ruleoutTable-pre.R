@@ -20,7 +20,7 @@
 #' @param               [previously, proportion of patients put on standard pathway by clinical judgment (gamma)],
 #' @param stat Which statistic to use for time and cost estimate (e.g. Mean, Median, 1st Qu.)
 #' @param model Which model structure/tree design to use (
-#' \code{pretest.fixed} is include highest risk proportion with clinical judgement before rule-out test (fixed proportion risk factor independent),
+#' \code{pretest.fixed} is include highest risk proportion with clinical judgement before rule-out test (fixed proportion risk factor independent) USED IN PAPER,
 #' \code{pretest.var} is include highest risk proportion with clinical judgement before rule-out test (risk factor dependent),
 #' \code{posttest.fixed} is test everyone first and include randomly selected proportion then include highest risk proportions,
 #' \code{posttest.var} is test everyone first then remove highest risk proportion,
@@ -29,9 +29,9 @@
 
 
 make.ruleoutTable.pre <- function(
-  #data = data,
-  thresh = seq(from=1, to=0.9, by=-0.01),
-  Ctest = c(1, 100),#, 200, 300, 400, 500, 600),
+  # data = data,
+  thresh = seq(from=1, to=0.8, by=-0.01),
+  Ctest = c(200, 300),#, 200, 300, 400, 500, 600),
   FNcost = 0,
   FNtime = 42,  #6 weeks
   ruleouttime = 1L,
@@ -397,6 +397,8 @@ make.ruleoutTable.pre <- function(
                                          (NumDosanjh[1]*prop_highriskDosanjh[1] + NumDosanjh[4]*prop_highriskDosanjh[4])/(NumDosanjh[1]+NumDosanjh[4]) ))
 
   }else if(model=="posttest.fixed"){
+
+    Nnew <<- npatients
 
     testcostavoid <- spec.clinical*(1-cat4propfollowup)*
       (numRuledOut.new[[4]]*pwaycost.old[4] + ifelse(cat3TB,0, numRuledOut.new[[3]]*pwaycost.old[3]))
