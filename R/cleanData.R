@@ -1,24 +1,44 @@
-#' Clean IDEA clinical data.
+
+#' TRUE element if NA or ""
 #'
-#' \code{cleanData} is a high-level function to clean IDEA clinical data for analysis
+#' @param df dataframe
+#'
+#' @return logical array
+
+is.empty <- function(df){
+  return(is.na(df) | df=="")
+}
+
+
+#' Clean IDEA clinical data
+#'
+#' \code{cleanData} is a high-level function to clean IDEA clinical data for analysis.
 #'
 #' @param data Individual patient records
 #' @return data
 
 cleanData <- function(data){
-  ## data: file address (string)
-  ##
 
-  # load(file=data)
+  # load(file=data)   #data: file address (string)
+
+  require(lubridate)
+  require(mondate)
 
 
   # TB tests ------------------------------------------------------------------
 
   names(data) <- gsub("testRes", "", names(data))
 
+  test.names.ORIGINAL <- c("QFN", "TSPOT", "TST", "Smear", "TBcult", "BAL", "HistBiop",
+                           "NeedleAsp", "PCR", "CXR", "CT", "MRI")
+  testDate.names.ORIGINAL <- c("QFNtestDate", "TSPOTtestDate", "TSTtestDate", "SmeartestDate", "TBculttestDate", "BALtestDate", "HistBioptestDate",
+                               "NeedleAsptestDate", "PCRtestDate", "CXRtestDate", "CTtestDate", "MRItestDate")
+  ##TODO## don't currently include CSF (cerebro-spinal fluid) sample
+  # should treat this like the BAL data
+
+
   # Discretised groups --------------------------------------------------------
   data$TSTcut <- cut(data$TST, breaks=c(0,6,15,100), right=FALSE)  #used by Yemesi @ Bham
-
 
   test.names <- c("QFN", "TSPOT", "TST", "TSTcut", "Smear", "TBcult", "CSF", "BAL",
                   "HistBiop", "NeedleAsp", "PCR", "CXR", "CT", "MRI")
@@ -64,7 +84,6 @@ cleanData <- function(data){
   data$PETtestDate <- PETtestDate
 
   test.names <- c("IGRA", "imaging", test.names, "PET", "TSTres", "IGRAorTST")
-
 
   data <- joinWithLookups(data)
 
@@ -182,7 +201,7 @@ cleanData <- function(data){
   # View(data.frame(data$PatientStudyID, data$testDate.min, data$DateVisitFU, data$DateVisitFU0, data$start.to.FU)[order(data$PatientStudyID),])  #check
 
   data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.CXR, data$start.to.MRI, data$start.to.PET, na.rm=T)
-  data$start.to.IGRA <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
+  data$start.to.IGRA  <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
   data$start.to.other <- pmax(data$start.to.other1, data$start.to.other2, na.rm=T)
 
   #NeedleAsp isnt a test but a sampling technique so could be used for other test
@@ -224,25 +243,6 @@ cleanData <- function(data){
 
   data <- estimateTimeToDiagnosis(data)
 
-
-  # BAL ---------------------------------------------------------------------
-
-  ## split Smear and Culture in to 2 types BAL/non-BAL
-  data$SmearBAL <- data$Smear%in%c("BAL","bal")
-  data$SmearNonBAL <- !data$SmearBAL
-  data$TBcultBAL <- data$TBcultsite%in%c("BAL","bal")
-  data$TBcultnonBAL <- !data$TBcultBAL
-
-
-  ##TODO##
-  ## what do we do with the BAL column, because we don't know if its culture or smear?
-
-  # data$SmearNonBAL[data$TypeSmear%in%c("BAL","bal")] <- NA
-  # data$SmearBAL[is.na(data$BAL) & data$TypeSmear%in%c("BAL","bal")] <- data$TypeSmear[is.na(data$BAL) & data$TypeSmear%in%c("BAL","bal")]
-
-  ## also BAL could be in the Othertest fields...
-
-
   ##TODO##
   ## only include tests that report _before_ culture reports
   ## if they're after then substitute in "Not taken"
@@ -275,14 +275,13 @@ cleanData <- function(data){
 
   data$Sex <- as.factor(data$Sex)
 
-
   ##TODO##
   ## what to do about TSTcut NA level?
 
-  data[,test.names][is.na(data[,test.names]) | data[,test.names]==""] <- "Not taken"
+  data[,test.names.ORIGINAL][is.empty(data[,test.names.ORIGINAL]) & !is.na(data[,testDate.names.ORIGINAL])] <- "INDETERMINATE"
+  data[,test.names][is.empty(data[,test.names])] <- "Not taken"
 
-
-  data$Country <- joinLevels(data$Country, list("UK"=c("ENGLAND","IRELAND","UNITED KINGDOM","WALES","SCOTLAND")))
+  data$Country <- joinLevels(data$Country, list("UK" = c("ENGLAND","IRELAND","UNITED KINGDOM","WALES","SCOTLAND")))
   data$Country[data$Country=="N/A"] <- NA
   data$Country <- droplevels(data$Country)
 
@@ -293,33 +292,10 @@ cleanData <- function(data){
 
   data$jobrisk <- data$New_occupation=="Healthcare worker"
 
-  ## group diagnosis outcomes
-  ##TODO## do over-lapping groups
-
-  lookuplist <- list("LRTI"=c("LRTI",
-                              "LTBI - treatment indicated",
-                              "LTBI - treatment indicated;Other",
-                              "LTBI - treatment indicated;Other;URTI",
-                              "LTBI - treatment indicated;Other;Pneumonia",
-                              "LTBI - treatment indicated;Pneumonia",
-                              "LTBI - treatment indicated;URTI",
-                              "LRTI;LTBI - treatment indicated;Other",
-                              "LRTI;Other"),
-                     "Cancer"=c("Cancer","Cancer;LTBI - treatment indicated", "Cancer;Other","Cancer;Other;Pneumonia"),
-                     "Chest Infection"=c("Chest Infection", "Chest Infection;LTBI - treatment indicated", "Chest Infection;Other"),
-                     "Other"=c("Other","Other;Pneumonia","Other;Sarcoidosis","Other;URTI"),
-                     "Active TB"=c("Active TB", "Active TB;Other"))
-
-  data$DiagoutcomeGrouped <- data$Diagoutcome
-  lfac <- levels(data$DiagoutcomeGrouped)
-  othrlevs <- lfac[!lfac %in% unlist(lookuplist)]
-  x <- c(lookuplist, othrlevs)
-  names(x) <- c(names(lookuplist), othrlevs)
-  levels(data$DiagoutcomeGrouped) <- x
-
+  data <- GroupDiagOutcomes(data)
 
   ## group Dosanjh category 4
-  lookuplist <- list("1"=1,"2"=2,"3"=3,"4"=c("4A","4B","4C","4D"))
+  lookuplist <- list("1"=1, "2"=2, "3"=3, "4"=c("4A","4B","4C","4D"))
   data$DosanjhGrouped <- data$Dosanjh
   lfac <- levels(data$data$DosanjhGrouped)
   othrlevs <- lfac[!lfac %in% unlist(lookuplist)]
@@ -333,7 +309,6 @@ cleanData <- function(data){
   symptoms.names <- c("Cough","Fever","Ngtsweat","Wghtloss","Haemop","Leth","OtherAE1","OtherAE2","OtherAE3","OtherAE4","OtherAE5","OtherAE6")
   data$numSymptoms <- apply(data[,symptoms.names],1,sum)#, na.rm=T)
 
-
   ## group number of symptoms
   lookuplist <- list("1"=1,"2"=2,"3"=3,"4"=4, "5"=5, ">5"=c(6,7,8,9,10,11,12))
   data$numSymptomsGrouped <- as.factor(data$numSymptoms)
@@ -343,62 +318,52 @@ cleanData <- function(data){
   names(x) <- c(names(lookuplist), othrlevs)
   levels(data$numSymptomsGrouped) <- x
 
-
   symptomsEndDates.names <- paste(symptoms.names, "End", sep="")
-
 
   for (i in symptomsEndDates.names){
     data[,i] <- as.Date.POSIX(data[,i])}
 
 
-  # symptoms resolved estimates ---------------------------------------------
-
-  data$Sx_resolved <- FALSE
-
-  ## using `all' is conservative estimates
-
-  for (i in 1:nrow(data)){
-
-    cols <- symptomsEndDates.names[unlist(data[i,symptoms.names])]
-
-    if(all(is.na(cols))){   #no symptoms
-      data$Sx_resolved[i] <- FALSE
-    }else{
-      observedEndDates <- data[i, cols]
-      observedEndDates[is.na(observedEndDates)] <- as.Date("2020/01/01")       #replace missing with large dates
-
-      if(data$step1Diag[i]){
-        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) (x - data$TBDrugStart.min[i])<drugReviewPeriod))      #response to treatment
-        ## could alternatively have same as below?
-        ## ...
-      }else{
-        # data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) x <= data[i,"TBculttestDate.orig"]))    #self-cured
-        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) x <= data[i,"TBculttestDate"]))
-      }
-    }
-  }
+  data <- EstimateSymptomsResolved(data, symptomsEndDates.names, symptoms.names, drugReviewPeriod)
 
 
+  ## distiguish between when clinical features used to rule-in or rule-out TB
+  data$clinfeatures <- rep("none", nrow(data))
+  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="TRUE"]  <- "TB"
+  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="FALSE"] <- "other"
 
-  # identify out-of-sequence tests ------------------------------------------
 
-  ## which tests are after starting treatment?
-  x <- t(apply(data, 1, function(z) z[testDate.names[-1]] > z["TBDrugStart.min"]))
-  colnames(x) <- tests.postDrugStart <- paste(colnames(x),".postDrugStart", sep="")
+  # estimate counts of each test taken --------------------------------------
 
-  ## which tests are after culture result?
-  y <- t(apply(data, 1, function(z) z[testDate.names[-1]] > z["TBculttestDate"]))
-  colnames(y) <- tests.postCult <- paste(colnames(y),".postCult", sep="")
+  tests <- c("TBcult", "Smear", "IGRA", "TSTres", "TSPOT", "QFN", "CXR", "CSF", "BAL", "HistBiop", "NeedleAsp", "PCR", "CT", "MRI", "PET")
 
-  data <- data.frame(data, x, y)
+  NumEachTest <- data.frame(apply(data[,tests]!="Not taken", 2, as.numeric))
+  NumEachTest[is.na(NumEachTest)] <- 0
+  names(NumEachTest) <- paste("Num_", tests, sep="")
+  data <- data.frame(data, NumEachTest)
 
+
+  ## this assumes all test dates are recorded, which they aren't!
+#   # identify out-of-sequence tests ------------------------------------------
+#
+#   ## which tests are after starting treatment?
+#   x <- t(apply(data, 1, function(z) z[testDate.names[-1]] > z["TBDrugStart.min"]))
+#   colnames(x) <- tests.postDrugStart <- paste(colnames(x),".postDrugStart", sep="")
+#
+#   ## which tests are after culture result?
+#   y <- t(apply(data, 1, function(z) z[testDate.names[-1]] > z["TBculttestDate"]))
+#   colnames(y) <- tests.postCult <- paste(colnames(y),".postCult", sep="")
+#   data <- data.frame(data, x, y)
 
   data <- rmPatientsInCleaning(data)
 
   data <- calcRiskFactorScore(data)
 
-  data <- data.frame(data, totalcost=calcPatientCostofTests(data[,
-                      c("TBcult", "Smear", "IGRA", "TST", "TSPOT", "QFN", "CXR", "CSF", "BAL", "HistBiop", "NeedleAsp", "PCR", "CT", "MRI", "PET")]))
+  data <- tidyBALSputumdata(data)
+  data <- tidyCXRdata(data)
+  data <- tidyCTdata(data)
+
+  data <- data.frame(data, totalcost=calcPatientCostofTests(data))
 
   data <- droplevels(data)
 

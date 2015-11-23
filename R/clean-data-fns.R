@@ -16,6 +16,81 @@ calcRiskFactorScore <- function(data){
 }
 
 
+#' Estimate symptoms resolved by whether there was a response to treatment or self-cured
+#'
+#' @param data
+#' @param symptomsEndDates.names
+#' @param symptoms.names
+#' @param drugReviewPeriod
+#'
+#' @return data
+
+EstimateSymptomsResolved <- function(data, symptomsEndDates.names, symptoms.names, drugReviewPeriod){
+
+  data$Sx_resolved <- FALSE
+
+  ## using `all' is conservative estimates
+
+  for (i in 1:nrow(data)){
+
+    cols <- symptomsEndDates.names[unlist(data[i,symptoms.names])]
+
+    if(all(is.na(cols))){   #no symptoms
+      data$Sx_resolved[i] <- FALSE
+    }else{
+      observedEndDates <- data[i, cols]
+      observedEndDates[is.na(observedEndDates)] <- as.Date("2020/01/01")       #replace missing with large dates
+
+      if(data$step1Diag[i]){
+        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) (x - data$TBDrugStart.min[i])<drugReviewPeriod))      #response to treatment
+        ## could alternatively have same as below?
+        ## ...
+      }else{
+        # data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) x <= data[i,"TBculttestDate.orig"]))    #self-cured
+        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) x <= data[i,"TBculttestDate"]))
+      }
+    }
+  }
+
+  data
+}
+
+
+#' Group Diagnosis Outcomes
+#'
+#' ##TODO## do over-lapping groups, not mutually exclusive
+#'
+#' @param data
+#'
+#' @return data
+
+GroupDiagOutcomes <- function(data){
+
+  lookuplist <- list("LRTI"=c("LRTI",
+                              "LTBI - treatment indicated",
+                              "LTBI - treatment indicated;Other",
+                              "LTBI - treatment indicated;Other;URTI",
+                              "LTBI - treatment indicated;Other;Pneumonia",
+                              "LTBI - treatment indicated;Pneumonia",
+                              "LTBI - treatment indicated;URTI",
+                              "LRTI;LTBI - treatment indicated;Other",
+                              "LRTI;Other"),
+                     "Cancer"=c("Cancer","Cancer;LTBI - treatment indicated", "Cancer;Other","Cancer;Other;Pneumonia"),
+                     "Chest Infection"=c("Chest Infection", "Chest Infection;LTBI - treatment indicated", "Chest Infection;Other"),
+                     "Other"=c("Other","Other;Pneumonia","Other;Sarcoidosis","Other;URTI"),
+                     "Active TB"=c("Active TB", "Active TB;Other"))
+
+  data$DiagoutcomeGrouped <- data$Diagoutcome
+  lfac <- levels(data$DiagoutcomeGrouped)
+  othrlevs <- lfac[!lfac %in% unlist(lookuplist)]
+  x <- c(lookuplist, othrlevs)
+  names(x) <- c(names(lookuplist), othrlevs)
+  levels(data$DiagoutcomeGrouped) <- x
+
+  data
+}
+
+
 #' Remove Patients Records In Data Cleaning
 #'
 #' \code{rmPatientsInCleaning}
@@ -39,14 +114,15 @@ rmPatientsInCleaning <- function(data){
   ## do we really want the cases that are _suspected_ of being PTB instead?
   data <- subset(data, (EPTBorPTB=="PTB" | EPTBorPTB=="EPTB;PTB" | EPTBorPTB=="" | is.na(EPTBorPTB)))
 
-  ## Heatherwood and Wrexham Park Hospital NHS Foundation Trust
-  data <- subset(data, SiteID!="H")
-
-  ## patient was TRANSFERRED TO LEICESTER FOR FU and got his study number changed to L058
-  data <- subset(data, PatientStudyID!="B048")
-
-  ## decided not to give blood,  probably patient changed her mind and therefore did not ENROLL in the study
-  data <- subset(data, PatientStudyID!="B117")
+  ## does it matter if we include these or not??
+#   ## Heatherwood and Wrexham Park Hospital NHS Foundation Trust
+#   data <- subset(data, SiteID!="H")
+#
+#   ## patient was TRANSFERRED TO LEICESTER FOR FU and got his study number changed to L058
+#   data <- subset(data, PatientStudyID!="B048")
+#
+#   ## decided not to give blood, probably patient changed her mind and therefore did not ENROLL in the study
+#   data <- subset(data, PatientStudyID!="B117")
 
   ## not on our diagnostic pathway
   ### patients treated _before_ first test
