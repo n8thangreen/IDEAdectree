@@ -20,7 +20,7 @@
 #' @param               [previously, proportion of patients put on standard pathway by clinical judgment (gamma)],
 #' @param stat Which statistic to use for time and cost estimate (e.g. Mean, Median, 1st Qu.)
 #' @param model Which model structure/tree design to use (
-#' \code{pretest.fixed} is include highest risk proportion with clinical judgement before rule-out test (fixed proportion risk factor independent) USED IN PAPER,
+#' \code{pretest.fixed} is include highest risk proportion with clinical judgement before rule-out test (fixed proportion risk factor independent) **USED IN MAIN PAPER**,
 #' \code{pretest.var} is include highest risk proportion with clinical judgement before rule-out test (risk factor dependent),
 #' \code{posttest.fixed} is test everyone first and include randomly selected proportion then include highest risk proportions,
 #' \code{posttest.var} is test everyone first then remove highest risk proportion,
@@ -29,7 +29,7 @@
 
 
 make.ruleoutTable.pre <- function(
-  # data = data,
+  data = data,
   thresh = seq(from=1, to=0.8, by=-0.01),
   Ctest = c(200, 300),#, 200, 300, 400, 500, 600),
   FNcost = 0,
@@ -186,42 +186,6 @@ make.ruleoutTable.pre <- function(
 
 
   if(model=="posttest.var"){
-#
-#     ##TODO##
-#     ## doesnt quite workout. shouldnt have a second kink in the INMB curve...
-#
-#     prop_highriskDosanjh <- list()
-#
-#     data.ordered <- data[order(data$riskfacScore),]
-#
-#     data1 <- data.ordered[data.ordered$DosanjhGrouped==1,]
-#     data.post <- sapply(sensitivity, function(x) data1[1:(nrow(data1)*(1-x)),"riskfacScore"])   ##TODO## when x=1?
-#     # data.post <- sapply(sensitivity, function(x) ifelse(x==1,NA,data1[1:(nrow(data1)*(1-x)),"riskfacScore"]))
-#     # data.post <- sapply(sensitivity, function(x) data1[seq(length.out=nrow(data1)*(1-x)), "riskfacScore"])
-#     prop_highriskDosanjh[[1]] <- sapply(data.post, function(x) sum(x>=prop_highrisk, na.rm=T)/sum(!is.na(x)))
-#
-#     data2 <- data.ordered[data.ordered$DosanjhGrouped==2,]
-#     data.post <- sapply(sensitivity, function(x) data2[1:(nrow(data2)*(1-x)),"riskfacScore"])
-#     # data.post <- sapply(sensitivity, function(x) ifelse(x==1,NA,data2[1:(nrow(data2)*(1-x)),"riskfacScore"]))
-#     # data.post <- sapply(sensitivity, function(x) data2[seq(length.out=nrow(data2)*(1-x)), "riskfacScore"])
-#     prop_highriskDosanjh[[2]] <- sapply(data.post, function(x) sum(x>=prop_highrisk, na.rm=T)/sum(!is.na(x)))
-#
-#     data3 <- data.ordered[data.ordered$DosanjhGrouped==3,]
-#     if(cat3TB){
-#       data.post <- sapply(sensitivity, function(x) data3[1:(nrow(data3)*(1-x)),"riskfacScore"])
-#       # data.post <- sapply(sensitivity, function(x) ifelse(x==1,NA,data3[1:(nrow(data3)*(1-x)),"riskfacScore"]))
-#       # data.post <- sapply(sensitivity, function(x) data3[seq(length.out=nrow(data3)*(1-x)),"riskfacScore"])
-#     }else{
-#       data.post <- sapply(specificity, function(x) data3[1:(nrow(data3)*x),"riskfacScore"])}
-#     # data.post <- sapply(specificity, function(x) ifelse(x==0,NA,data3[1:(nrow(data3)*x),"riskfacScore"]))}
-#       # data.post <- sapply(specificity, function(x) data3[seq(length.out=nrow(data3)*x), "riskfacScore"])}
-#     prop_highriskDosanjh[[3]] <- sapply(data.post, function(x) sum(x>=prop_highrisk, na.rm=T)/sum(!is.na(x)))
-#
-#     data4 <- data.ordered[data.ordered$DosanjhGrouped==4,]
-#     data.post <- sapply(specificity, function(x) data4[1:(nrow(data4)*x),"riskfacScore"])
-#     # data.post <- sapply(specificity, function(x) ifelse(x==0,NA,data4[1:(nrow(data4)*x),"riskfacScore"]))
-#     # data.post <- sapply(specificity, function(x) data4[seq(length.out=nrow(data4)*x), "riskfacScore"])
-#     prop_highriskDosanjh[[4]] <- sapply(data.post, function(x) sum(x>=prop_highrisk, na.rm=T)/sum(!is.na(x)))
 
   }else{
     highriskPatients <- data$riskfacScore>=prop_highrisk
@@ -331,13 +295,12 @@ make.ruleoutTable.pre <- function(
 
   ## more aggregated (i.e. not recorded by Dosanjh) than above ##
 
-  if(model=="pretest.fixed"){
+  if(model=="pretest.fixed"){ ##MAIN PAPER MODEL##
 
     Nnew <<- c(1-sens.clinical, 1-sens.clinical, ifelse(cat3TB,1-sens.clinical,spec.clinical), spec.clinical)%*%NumDosanjh
     Nnew_TB  <-  c(1-sens.clinical, 1-sens.clinical, ifelse(cat3TB,1-sens.clinical,0), 0)%*%NumDosanjh
     Nnew_nonTB <- c(0, 0, ifelse(cat3TB,0,spec.clinical), spec.clinical)%*%NumDosanjh
-    prevNew <- Nnew_TB/Nnew
-
+    prevalenceNew <- Nnew_TB/Nnew
 
     testcostavoid <- spec.clinical*numRuledOut.new[[4]]*pwaycost.old[4]
     + ifelse(cat3TB, 0, spec.clinical*numRuledOut.new[[3]]*pwaycost.old[3])
@@ -362,8 +325,8 @@ make.ruleoutTable.pre <- function(
     ##https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values
 
     ## positive/negative predictive value
-    PPV <- sensitivity*prevNew/(sensitivity*prevNew + (1-specificity)*(1-prevNew))
-    NPV <- specificity*(1-prevNew)/((1-sensitivity)*prevNew + specificity*(1-prevNew))
+    PPV <- sensitivity*prevalenceNew/(sensitivity*prevalenceNew + (1-specificity)*(1-prevalenceNew))
+    NPV <- specificity*(1-prevalenceNew)/((1-sensitivity)*prevalenceNew + specificity*(1-prevalenceNew))
 
     numTN <- specificity*Nnew_nonTB
     numFN <- (1-sensitivity)*Nnew_TB
