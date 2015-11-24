@@ -184,7 +184,7 @@ maketable.Dosanjh_TimeCost <- function(data){
 
 make.testFreqTable <- function(data){
 
-  test.names <- c("TBcult", "QFN", "TSPOT", "TSTcut", "Smear", "CSF", "BAL",
+  test.names <- c("TBcult", "QFN", "TSPOT", "TSTcut", "Smear", "BAL", #"CSF",
                   "HistBiop", "NeedleAsp", "PCR", "CXR", "CT", "MRI", "PET")
 
   data[,test.names] <- (data[,test.names]!="Not taken")

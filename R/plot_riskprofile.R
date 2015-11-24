@@ -46,88 +46,10 @@ plot.riskprofile <- function(data, prop_highrisk, FNtime){
   lines(c(min(totalenhanced), max(totalenhanced)), c(1,1), col="grey")
 
   points(0,1, pch=8, cex=1.5, lwd=2, col="red")
-  points(totalenhanced[baselineRow], 1, pch=8, cex=1.5, lwd=2)
+  points(totalenhanced[baselineRow], 1, pch=0, cex=2, lwd=2)
 
   abline(v=0, lty=3)
-
-  #  ------------------------------------------------------------------------
-
-
-  # rows <- sample(1:nrow(out$riskprofile$costs), 1000)
-  # for (i in rows){
-  #   ordered <- order(as.numeric(out$riskprofile$costs[i,]))
-  # lines(as.numeric(out$riskprofile$costs[i,])[ordered], cumsum(as.numeric(out$riskprofile$probs[i,])[ordered]), col=rgb(0,0,0,0.1), type="s", pch=16, lwd=5)
-  # }
-
-  # lines(max1_
-  # lines(max2)
-  # lines(max3)
-  # lines(max4, type = "p", pch=3)
-  #
-  # lines(min1)
-  # lines(min2)
-  # lines(min3)
-  # lines(min4, type = "p", pch=3)
-
-  # segments(mean(min1[,1]),min1[1,2],mean(max1[,1]),max1[1,2], lty=2)
-  # segments(mean(min2[,1]),min2[1,2],mean(max2[,1]),max2[1,2], lty=2)
-  # segments(mean(min3[,1]),min3[1,2],mean(max3[,1]),max3[1,2], lty=2)
-  # segments(mean(min4[,1]),min4[1,2],mean(max4[,1]),max4[1,2], lty=2)
-
-  ##
-
-#   mean1 <- aggregate(probs[,1], by=list(costs[,1]), mean)
-#   mean2 <- aggregate(probs[,2], by=list(costs[,2]), mean)
-#   mean3 <- aggregate(probs[,3], by=list(costs[,3]), mean)
-#   mean4 <- aggregate(probs[,4], by=list(costs[,4]), mean)
-#
-#   sd1 <- aggregate(probs[,1], by=list(costs[,1]), sd)
-#   sd2 <- aggregate(probs[,2], by=list(costs[,2]), sd)
-#   sd3 <- aggregate(probs[,3], by=list(costs[,3]), sd)
-#   sd4 <- aggregate(probs[,4], by=list(costs[,4]), sd)
-#
-#   upper1 <- lower1 <- mean1
-#   upper2 <- lower2 <- mean2
-#   upper3 <- lower3 <- mean3
-#   upper4 <- lower4 <- mean4
-#
-#   upper1[,2] <- upper1[,2] + sd1[,2]
-#   upper2[,2] <- upper2[,2] + sd2[,2]
-#   upper3[,2] <- upper3[,2] + sd3[,2]
-#   upper4[,2] <- upper4[,2] + sd4[,2]
-#
-#   lines(mean1, col="red", lwd=3)
-#   lines(mean2, col="red", lwd=3)
-#   lines(mean3, col="red", lwd=3)
-#   lines(mean4, col="red", lwd=3, type = "p", pch=3)
-#
-#   lines(upper1, col="red")
-#   lines(upper2, col="red")
-#   lines(upper3, col="red")
-#   lines(upper4, col="red", type = "p", pch=3)
-#
-#   lower1[,2] <- lower1[,2] - sd1[,2]
-#   lower2[,2] <- lower2[,2] - sd2[,2]
-#   lower3[,2] <- lower3[,2] - sd3[,2]
-#   lower4[,2] <- lower4[,2] - sd4[,2]
-#
-#   lines(lower1, col="red")
-#   lines(lower2, col="red")
-#   lines(lower3, col="red")
-#   lines(lower4, col="red", type = "p", pch=3)
-#
-#   segments(mean(lower1[,1]),lower1[1,2],mean(upper1[,1]),upper1[1,2], col="red")
-#   segments(mean(lower2[,1]),lower2[1,2],mean(upper2[,1]),upper2[1,2], col="red")
-#   segments(mean(lower3[,1]),lower3[1,2],mean(upper3[,1]),upper3[1,2], col="red")
-#   segments(mean(lower4[,1]),lower4[1,2],mean(upper4[,1]),upper4[1,2], col="red")
-#
-#   segments(mean(lower3[,1]),mean3[1,2],mean(lower4[,1]),mean4[1,2])
-#   segments(mean(lower2[,1]),mean2[1,2],mean(lower4[,1]),mean4[1,2])
-#   segments(mean(lower1[,1]),mean1[1,2],mean(lower2[,1]),mean2[1,2])
-
-
-
-
-
 }
+
+
 

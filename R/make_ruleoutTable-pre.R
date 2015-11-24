@@ -29,7 +29,7 @@
 
 
 make.ruleoutTable.pre <- function(
-  data = data,
+  # data = data, #optionally comment-out line
   thresh = seq(from=1, to=0.8, by=-0.01),
   Ctest = c(200, 300),#, 200, 300, 400, 500, 600),
   FNcost = 0,
@@ -318,10 +318,17 @@ make.ruleoutTable.pre <- function(
     calcCruleout_hat <- function(totalcostavoid, timecostincur, npatients)  (totalcostavoid - timecostincur)/Nnew
 
 
-    ##TODO##
-    riskprofile <- NA
+    riskprofile <- list(costs=data.frame(pway1=testcost + A*qaly*(ruleouttime+FNtime),
+                                         pway2=testcost + A*qaly*ruleouttime,
+                                         pway3=testcost + A*qaly*ruleouttime - pwaycost.old[4], #correctly rule-out
+                                         pway4=0),
+                        probs=data.frame(pway1=(1-sens.clinical)*numRuledOut.new[[1]]/NumDosanjh[1],
+                                         pway2=(1-sens.clinical)*numNotRuledOut.new[[1]]/NumDosanjh[1] + spec.clinical*numNotRuledOut.new[[4]]/NumDosanjh[4],
+                                         pway3=spec.clinical*numRuledOut.new[[4]]/NumDosanjh[4], #correctly rule-out
+                                         pway4=(NumDosanjh[1]*sens.clinical + NumDosanjh[4]*(1-spec.clinical))/(NumDosanjh[1]+NumDosanjh[4]) #no rule-out test taken
+                                         ))
 
-    ## performance measures --
+    ## rule-out test performance measures --
     ##https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values
 
     ## positive/negative predictive value
@@ -350,14 +357,14 @@ make.ruleoutTable.pre <- function(
     calcCruleout_hat <- function(totalcostavoid, timecostincur, npatients) (totalcostavoid-timecostincur)/((1-prop_highriskDosanjh)%*%NumDosanjh)
 
 
-    riskprofile <- list(costs=data.frame(testcost + A*qaly*(ruleouttime+FNtime),
-                                         testcost + A*qaly*ruleouttime,
-                                         testcost + A*qaly*ruleouttime - pwaycost.old[4],
-                                         0),
-                        probs=data.frame((1-prop_highriskDosanjh[1])*numRuledOut.new[[1]]/NumDosanjh[1],
-                                         (1-prop_highriskDosanjh[1])*numNotRuledOut.new[[1]]/NumDosanjh[1] + (1-prop_highriskDosanjh[4])*numNotRuledOut.new[[4]]/NumDosanjh[4],
-                                         (1-prop_highriskDosanjh[4])*numRuledOut.new[[4]]/NumDosanjh[4],
-                                         (NumDosanjh[1]*prop_highriskDosanjh[1] + NumDosanjh[4]*prop_highriskDosanjh[4])/(NumDosanjh[1]+NumDosanjh[4]) ))
+    riskprofile <- list(costs=data.frame(pway1=testcost + A*qaly*(ruleouttime+FNtime),
+                                         pway2=testcost + A*qaly*ruleouttime,
+                                         pway3=testcost + A*qaly*ruleouttime - pwaycost.old[4],
+                                         pway4=0),
+                        probs=data.frame(pway1=(1-prop_highriskDosanjh[1])*numRuledOut.new[[1]]/NumDosanjh[1],
+                                         pway2=(1-prop_highriskDosanjh[1])*numNotRuledOut.new[[1]]/NumDosanjh[1] + (1-prop_highriskDosanjh[4])*numNotRuledOut.new[[4]]/NumDosanjh[4],
+                                         pway3=(1-prop_highriskDosanjh[4])*numRuledOut.new[[4]]/NumDosanjh[4],
+                                         pway4=(NumDosanjh[1]*prop_highriskDosanjh[1] + NumDosanjh[4]*prop_highriskDosanjh[4])/(NumDosanjh[1]+NumDosanjh[4]) ))
 
   }else if(model=="posttest.fixed"){
 
@@ -560,10 +567,11 @@ make.ruleoutTable.pre <- function(
   # write.csv(out.costbyDosanjh, "../../../output_data/ruleout-costtable-notsampled.csv")
   # write.csv(out.diagtimebyDosanjh, "../../../output_data/ruleout-diagtimetable-notsampled.csv")
 
-  list(combinedDosanjh=out.combined, costbyDosanjh=out.costbyDosanjh, diagtimebyDosanjh=out.diagtimebyDosanjh, EV=EV, fixedcosts=fixedcosts,
+  list(combinedDosanjh=out.combined, costbyDosanjh=out.costbyDosanjh, diagtimebyDosanjh=out.diagtimebyDosanjh, fixedcosts=fixedcosts,
        prop_highriskDosanjh=prop_highriskDosanjh, ruleout.totalcost=ruleouttest.totalcost,
        pwaycost.highrisk=pwaycost.highrisk, pwaycost.lowrisk=pwaycost.lowrisk,
-       riskprofile=riskprofile, surfacevals=surfacevals)
+       riskprofile=riskprofile, EV=EV,
+       surfacevals=surfacevals)
 }
 
 
