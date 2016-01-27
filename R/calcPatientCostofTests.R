@@ -6,35 +6,35 @@
 #' If a BAL is taken we include the cost of the proceduce and the additional cost of a culture and smear if used for these.
 #'
 #' @param data IDEA study data set
+#' @param COSTS Named vector each test/procedure and unit costs.
 #' @param x3 Should the smear and culture be multiplied by 3? It is standard practice to perform 3 of each with a sputum sample.
 #'
 #' @return single value per patient
 
-calcPatientCostofTests <- function(data, x3 = TRUE){
+calcPatientCostofTests <- function(data, COSTS, x3 = TRUE){
 
   freq <- ifelse(x3, 3, 1)
-  TBcult.cost <- 22.29
-  Smear.cost  <- 1.56
+  if(is(COSTS, "list")){COSTS <- COSTS[["mean"]]}
 
   namesNumEachTest <- grep(names(data), pattern = "Num_",value = TRUE)
 
-  testcosts <- c(TBcult = freq*TBcult.cost, #10 #London RC of P of. Tuberculosis: clinical diagnosis and management of tuberculosis, and measures for its prevention and control. 2006;(November 2010):1–308.
-                 Smear = freq*Smear.cost, #HTA Systematic review, meta-analysis and economic modelling of molecular diagnostic tests for antibiotic resistance in TB.
-                 IGRA=56.24, #Pareek M, Bond M, Shorey J, Seneviratne S, Guy M, White P, et al. Community-based evaluation of immigrant tuberculosis screening using interferon   release assays and tuberculin skin testing: observational study and economic analysis. Thorax. 2012;230–9.
-                 TSTres=34.22, ##NCCCC, Tuberculosis: appendices. London: Royal College of Physicians, 2006; National Collaborating Centre for Chronic Conditions. TB Partial Update: Cost-effectiveness analysis of interferon gamma release assay (IGRA) testing for latent tuberculosis. London: NICE, 2010.
-                 TSPOT=82, #Local lab cost (IDEA health econ analysis plan)
-                 QFN=45, #52 #
-                 CXR=28, #NCCCC, Tuberculosis: appendices. London: Royal College of Physicians, 2006;National Collaborating Centre for Chronic Conditions. TB Partial Update: Cost-effectiveness analysis of interferon gamma release assay (IGRA) testing for latent tuberculosis. London: NICE, 2010.
-                 CSF=0, #NA for pulmonary TB
-                 BAL=612+23.24, #procedure+test #St Marys R & D office
-                 HistBiop=25, #St Marys R & D office
-                 NeedleAsp=90.21, #St Marys R & D office
-                 PCR=202.45, #St Marys R & D office
-                 CT=300, #St Marys R & D office
-                 MRI=375, #St Marys R & D office
-                 PET=713, #St Marys R & D office
-                 TBcultSmearBAL = TBcult.cost+Smear.cost,
-                 Risk_factors=0)
+  testcosts <- c(TBcult = freq*COSTS$TBcult,
+                 Smear = freq*COSTS$Smear,
+                 IGRA=COSTS$IGRA,
+                 TSTres=COSTS$TSTres,
+                 TSPOT=COSTS$TSPOT,
+                 QFN=COSTS$QFN,
+                 CXR=COSTS$CXR,
+                 CSF=COSTS$CSF,
+                 BAL=COSTS$BAL,
+                 HistBiop=COSTS$HistBiop,
+                 NeedleAsp=COSTS$NeedleAsp,
+                 PCR=COSTS$PCR,
+                 CT=COSTS$CT,
+                 MRI=COSTS$MRI,
+                 PET=COSTS$PET,
+                 TBcultSmearBAL = COSTS$TBcult + COSTS$Smear)#,
+                 # Risk_factors=0)  #why did I include this??
 
   ## if there's no test count data
   if(length(namesNumEachTest)==0){
@@ -49,4 +49,62 @@ calcPatientCostofTests <- function(data, x3 = TRUE){
   }
 }
 
+
+#' Sample from Standard Distributions
+#'
+#' @param param.distns
+#'
+#' @return vector of sample points
+#' @examples
+#'
+#' param.distns <- list(TBcult=list(distn="gamma",
+#' params=c(mean=22.29, sd=2.23)),
+#' Smear=list(distn="gamma",
+#'            params=c(mean=7, sd=0.68)),
+#' IGRA=list(distn="unif",
+#'           params=c(min=24, max=100)),
+#' TSTres=list(distn="unif",
+#'             params=c(min=8, max=32)),
+#' TSPOT=list(distn="unif",
+#'            params=c(min=45, max=99)),
+#' QFN=list(distn="unif",
+#'          params=c(min=36.8, max=84)),
+#' CXR=list(distn="unif",
+#'          params=c(min=26, max=41)),
+#' CSF=list(distn="none",
+#'          params=c(mean=0)),
+#' BAL=list(distn="none",
+#'          params=c(mean=612+23.24)),
+#' HistBiop=list(distn="none",
+#'               params=c(mean=25)),
+#' NeedleAsp=list(distn="none",
+#'                params=c(mean=90.21)),
+#' PCR=list(distn="none",
+#'          params=c(mean=202.45)),
+#' CT=list(distn="none",
+#'         params=c(mean=300)),
+#' MRI=list(distn="none",
+#'          params=c(mean=375)),
+#' PET=list(distn="none",
+#'          params=c(mean=713)))
+
+sample.distributions <- function(param.distns){
+
+  out <- data.frame(matrix(NA, nrow = 1, ncol = length(COST.distns)))
+  for (i in 1:length(param.distns)){
+
+    out[i] <- switch(param.distns[[i]]$distn,
+                     gamma = rgamma(1, shape = MoM.gamma(mean=param.distns[[i]]$params["mean"],
+                                                         var=param.distns[[i]]$params["sd"]^2)$shape,
+                                       scale = MoM.gamma(mean=param.distns[[i]]$params["mean"],
+                                                         var=param.distns[[i]]$params["sd"]^2)$scale),
+                     unif = runif(1, param.distns[[i]]$params["min"],
+                                     param.distns[[i]]$params["max"]),
+                     none = param.distns[[i]]$params["mean"])
+  }
+
+  names(out) <- names(param.distns)
+
+  return(out)
+}
 
