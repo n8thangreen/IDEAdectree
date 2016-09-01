@@ -1,3 +1,11 @@
 ---
 output: md_document
 ---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 1000)
+```
+
+# IDEAdectree
+
+IDEA project cost-effectiveness analysis of suspected active TB diagnostic pathway with novel rule-out test. 
