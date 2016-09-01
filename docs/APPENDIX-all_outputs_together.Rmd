@@ -1,0 +1,75 @@
+---
+title: "APPENDIX"
+author: "Nathan Green"
+date: "1 March 2016"
+output: 
+  word_document: 
+    keep_md: yes
+    toc: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, comment = NA, results = "hide")
+```
+
+
+# QFN_TSPOT-HIV-noindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-HIV-noindeterminates-RUNS.Rmd'}
+```
+
+# indiv-dectree_QFN_TSPOT-HIV-WITHindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-HIV-WITHindeterminates-RUNS.Rmd'}
+```
+
+# indiv-dectree_QFN_TSPOT-HIVneg-noindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-HIVneg-noindeterminates-RUNS.Rmd'}
+```
+
+# indiv-dectree_QFN_TSPOT-HIVneg-WITHindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-HIVneg-WITHindeterminates-RUNS.Rmd'}
+```
+
+# indiv-dectree_QFN_TSPOT-HIVpos-noindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-HIVpos-noindeterminates-RUNS.Rmd'}
+```
+
+# indiv-dectree_QFN_TSPOT-HIVpos-WITHindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-HIVpos-WITHindeterminates-RUNS.Rmd'}
+```
+
+# indiv-dectree_QFN_TSPOT-noindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-noindeterminates-RUNS.Rmd'}
+```
+
+# indiv-dectree_QFN_TSPOT-WITHindeterminates
+
+```{r child = 'SENSITIVITY_QFN_TSPOT-WITHindeterminates-RUNS.Rmd'}
+```
+
+<!---
+
+##TODO##
+## update
+
+# 25quantiles-basecase-QFN-TSPOT
+
+```{r child = '25quantiles-basecase-QFN-TSPOT.Rmd'}
+```
+
+# 65quantiles-basecase-QFN-TSPOT
+
+```{r child = '65quantiles-basecase-QFN-TSPOT.Rmd'}
+```
+
+-->
+
+
+
+

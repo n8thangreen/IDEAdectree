@@ -1,15 +1,16 @@
 
-#' Plot risk profile discrete distribution
+#' Plot Risk Profile Discrete Distribution
 #'
 #' Cost and probability of final outcomes (along each distinct path) in decision tree.
 #'
-#' @param data
-#' @param prop_highrisk
-#' @param FNtime
+#' @param data IDEA study data set.
+#' @param prop_highrisk Threshold of clinical judgment.
+#' @param FNtime Follow-up delay for false negative TB cases.
+#' @param title
 #'
 #' @return none
 
-plot.riskprofile <- function(data, prop_highrisk, FNtime){
+plot.riskprofile <- function(data, prop_highrisk, FNtime, title=NA){
 
   out <- make.ruleoutTable.pre(prop_highrisk = prop_highrisk, FNtime=FNtime)
 
@@ -18,7 +19,7 @@ plot.riskprofile <- function(data, prop_highrisk, FNtime){
 
   plot(1, 1,
        ylim=c(0,1), xlim=c(-500,2000), type="n",
-       xlab="Difference between current and enhanced diagnostic pathways total cost (£)", ylab="Probability")
+       xlab="Difference between current and enhanced total cost per patient (£)", ylab="Probability", main=title)
 
   max1 <- aggregate(probs[,1], by=list(costs[,1]), max)
   max2 <- aggregate(probs[,2], by=list(costs[,2]), max)
@@ -43,10 +44,14 @@ plot.riskprofile <- function(data, prop_highrisk, FNtime){
   segments(costs[baselineRow,1], probs[baselineRow,1], costs[baselineRow,2], probs[baselineRow,2])
 
   totalenhanced <- diag(probs%*%t(costs))
-  lines(c(min(totalenhanced), max(totalenhanced)), c(1,1), col="grey")
+  lines(c(min(totalenhanced), max(totalenhanced)), c(1,1), col="grey", lwd=2)
 
-  points(0,1, pch=8, cex=1.5, lwd=2, col="red")
-  points(totalenhanced[baselineRow], 1, pch=0, cex=2, lwd=2)
+  # points(0,1, pch=8, cex=1.5, lwd=2, col="red")
+  points(totalenhanced[baselineRow], 1, cex=2, lwd=2)#, pch=0)
+  text(max(totalenhanced)+400, 1,
+       paste0("INMB = £", round(-totalenhanced[baselineRow],2), " [", round(-max(totalenhanced),2), ", ", round(-min(totalenhanced),2), "]"))
+
+  text(1900, 1, paste0("Threshold = ", prop_highrisk,"\n Delay = ", FNtime, " days"))
 
   abline(v=0, lty=3)
 }

@@ -1,6 +1,6 @@
 #' summaryTable
 #'
-#' \code{summaryTable} gives basica statistics for patient groupings in IDEA data extract
+#' \code{summaryTable} gives basic statistics for patient groupings in IDEA data extract
 #'
 #' @param data Individual patient records
 #' @param dir filename to save output

@@ -1,5 +1,5 @@
 
-#' Read from original IDEA database extract and flatten
+#' Read From original IDEA Database Extract and Flatten (Tidy)
 #'
 #' \code{readFromDatabaseExtract} takes Access database and updates one of the tables
 #' to give a combined full data set with defined list of fields included.
@@ -8,11 +8,10 @@
 #' and so the latest version of this is joined to the other data.
 #' Part of the reason for doing it like this is because don't know how to convert a whole Access database to Excel,
 #' only a sheet at a time.
+#' ##TODO##
 #'
-#'
-#' @param Patients single table to update the data total database
 #' @return updated full data set
-
+#' @export
 readFromDatabaseExtract <- function(){
 
   require(XLConnect)

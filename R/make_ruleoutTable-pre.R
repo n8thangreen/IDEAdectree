@@ -25,11 +25,12 @@
 #' \code{posttest.fixed} is test everyone first and include randomly selected proportion then include highest risk proportions,
 #' \code{posttest.var} is test everyone first then remove highest risk proportion,
 #' \code{pretest.var.sensspec.var} is remove highest risk proportion before rule-out test and modify sensitivity and specificity proportions wrt subset case-mix.)
+#'
 #' @return list
 
 
 make.ruleoutTable.pre <- function(
-  # data = data, #optionally comment-out line
+  # data = data, #optionally comment-out line  #promise already under evaluation: recursive default argument reference or earlier problems?
   thresh = seq(from=1, to=0.8, by=-0.01),
   Ctest = c(200, 300),#, 200, 300, 400, 500, 600),
   FNcost = 0,
@@ -40,12 +41,12 @@ make.ruleoutTable.pre <- function(
   A = 55,
   npatients = nrow(data),
   cat4percent = table(data$DosanjhGrouped)[4]*100/npatients,  #i.e no change
-  comb=NA,
-  cat3TB=TRUE,
-  cat4propfollowup=0,
-  prop_highrisk=0.4, #most of the fits are <0.7
-  stat="Median",
-  model="pretest.fixed"){
+  comb = NA,
+  cat3TB = TRUE,
+  cat4propfollowup = 0,
+  prop_highrisk = 0.4, #most of the fits are <0.7
+  stat = "Median",
+  model = "pretest.fixed"){
 
 
   ##TODO##
@@ -185,15 +186,14 @@ make.ruleoutTable.pre <- function(
   }else{numRuledOut.new[[3]] <- NumDosanjh[3]*specificity}          #category 3 as not active TB
 
 
-  if(model=="posttest.var"){
+  if(model!="posttest.var"){
 
-  }else{
     highriskPatients <- data$riskfacScore>=prop_highrisk
 
     prop_highriskDosanjh <- sum(data$DosanjhGrouped==1 & highriskPatients, na.rm=T)/sum(data$DosanjhGrouped==1 & !is.na(highriskPatients), na.rm=T)
     prop_highriskDosanjh[2] <- sum(data$DosanjhGrouped==2 & highriskPatients, na.rm=T)/sum(data$DosanjhGrouped==2 & !is.na(highriskPatients), na.rm=T)
     prop_highriskDosanjh[3] <- sum(data$DosanjhGrouped==3 & highriskPatients, na.rm=T)/sum(data$DosanjhGrouped==3 & !is.na(highriskPatients), na.rm=T)
-    prop_highriskDosanjh[4] <- sum(data$DosanjhGrouped==4 & highriskPatients, na.rm=T)/sum(data$DosanjhGrouped==4 & !is.na(highriskPatients), na.rm=T)
+    prop_highriskDosanjh[4] <- sum(data$DosanjhGrouped==4 & highriskPatients, na.rm=T)/sum(data$DosanjhGrouped==4 & !is.na(highriskPatients), na.rm=T) #1-spec.clinical
   }
 
 
@@ -328,7 +328,7 @@ make.ruleoutTable.pre <- function(
                                          pway4=(NumDosanjh[1]*sens.clinical + NumDosanjh[4]*(1-spec.clinical))/(NumDosanjh[1]+NumDosanjh[4]) #no rule-out test taken
                                          ))
 
-    ## rule-out test performance measures --
+    ## rule-out test performance measures -----
     ##https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values
 
     ## positive/negative predictive value
@@ -340,6 +340,9 @@ make.ruleoutTable.pre <- function(
     numTP <- Nnew_TB - numFN
     accuracy <- (numTN + numTP)/Nnew
 
+    ##http://ktclearinghouse.ca/cebm/glossary/nnt
+    NNT <- npatients/numTN
+    NNH <- npatients/numFN
 
   }else if(model=="pretest.var"){
     testcostavoid <- (1-prop_highriskDosanjh[4])*numRuledOut.new[[4]]*pwaycost.lowrisk[4]
@@ -491,7 +494,9 @@ make.ruleoutTable.pre <- function(
                              NPV=NPV,
                              numTN=numTN,
                              numFN=numFN,
-                             Accuracy=accuracy)
+                             Accuracy=accuracy,
+                             NNT=NNT,
+                             NNH=NNH)
 
   surfacevals <- c(C_hat.sensSpecRatio.exact = C_hat.sensSpecRatio.exact,
                    C_hat.sensSpecRatio.numerical = C_hat.sensSpecRatio.numerical,
@@ -567,11 +572,11 @@ make.ruleoutTable.pre <- function(
   # write.csv(out.costbyDosanjh, "../../../output_data/ruleout-costtable-notsampled.csv")
   # write.csv(out.diagtimebyDosanjh, "../../../output_data/ruleout-diagtimetable-notsampled.csv")
 
-  list(combinedDosanjh=out.combined, costbyDosanjh=out.costbyDosanjh, diagtimebyDosanjh=out.diagtimebyDosanjh, fixedcosts=fixedcosts,
-       prop_highriskDosanjh=prop_highriskDosanjh, ruleout.totalcost=ruleouttest.totalcost,
-       pwaycost.highrisk=pwaycost.highrisk, pwaycost.lowrisk=pwaycost.lowrisk,
-       riskprofile=riskprofile, EV=EV,
-       surfacevals=surfacevals)
+  invisible(list(combinedDosanjh=out.combined, costbyDosanjh=out.costbyDosanjh, diagtimebyDosanjh=out.diagtimebyDosanjh, fixedcosts=fixedcosts,
+                 prop_highriskDosanjh=prop_highriskDosanjh, ruleout.totalcost=ruleouttest.totalcost,
+                 pwaycost.highrisk=pwaycost.highrisk, pwaycost.lowrisk=pwaycost.lowrisk,
+                 riskprofile=riskprofile, EV=EV,
+                 surfacevals=surfacevals))
 }
 
 

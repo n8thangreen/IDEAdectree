@@ -1,10 +1,77 @@
-#' Calculate a risk factor score for each patient
+
+#' Calculate the First Test Dates for Each Patient
 #'
-#' \code{calcRiskFactorScore}
+#' Which test dates are earliest within a time window from the date of study consent.
+#'
+#' @param data IDEA study data set.
+#' @param testDate.names Names of all test dates for each patient.
+#' @param maxtime The earliest allowable date before the date of consent for a test to be taken and still be for the same episode of TB.
+#' @export
+#' @return testDate.min
+
+calc.testDate.min <- function(data, testDate.names, maxtime){
+
+  dates <- data[,c("DateConsent", testDate.names)]
+  data$testDate.min <- apply(dates, 1,
+                             function(x){
+                               whichdates <- (difftime(x, x["DateConsent"], units="days") + maxtime)>=0
+                               min(x[whichdates], na.rm=TRUE)
+                             })
+  data
+}
+
+
+#' Remove Dates That are Before the Earliest Time For the Given Suspected TB Episode
 #'
 #' @param data
-#' @return data
+#' @param Date.names
+#' @param maxtime
 #'
+#' @inheritParams calc.Date.min
+#'
+#' @return dates
+#' @export
+#' @seealso \code{\link{calc.Date.min}}
+
+rm.TooEarly <- function(data, Date.names, maxtime){
+
+  dates <- data[,c("DateConsent", Date.names)]
+  tooearly.Dates <- t(apply(dates, 1,
+                                function(x){
+                                  whichdates <- (difftime(x, x["DateConsent"], units="days") + maxtime)<0
+                                }))
+  data[,c("DateConsent", Date.names)][tooearly.Dates] <- NA
+  data
+}
+
+
+#' Distiguish Between When Clinical Features Used to Rule-in or Rule-out TB
+#'
+#' Add a new column with \code{TB, other,} or \code{NA}.
+#'
+#' @param data
+#'
+#' @return data
+
+is.diagByClinicalFeatures <- function(data){
+
+  data$clinfeatures <- rep("none", nrow(data))
+  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="TRUE"]  <- "TB"
+  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="FALSE"] <- "other"
+  data
+}
+
+
+#' Calculate a risk factor score for each patient
+#'
+#' using a logistic regression calculate model probability predictions.
+#'
+#' ##TODO##
+#' add clinician or hospital history covariate, maybe multilevel?
+#'
+#' @param data
+#' @export
+#' @return data with additional column
 
 calcRiskFactorScore <- function(data){
 
@@ -16,20 +83,22 @@ calcRiskFactorScore <- function(data){
 }
 
 
-#' Estimate symptoms resolved by whether there was a response to treatment or self-cured
+#' Estimate Symptoms Resolved by Whether There Was a Response to Treatment or Self-Cured
 #'
-#' @param data
+#' Checks if there is a response to treatment or self-cured.
+#' Uses \code{all} as conservative estimates to check if the time between the observed end dates and earliest time that a patient was
+#' put on treatment is smaller than the time to follow-up by clinicians.
+#'
+#' @param data IDEA study data set
 #' @param symptomsEndDates.names
-#' @param symptoms.names
-#' @param drugReviewPeriod
-#'
+#' @param symptoms.names E.g. cough, weight loss, etc
+#' @param drugReviewPeriod Time to follow-up by clinicians
+#' @export
 #' @return data
 
 EstimateSymptomsResolved <- function(data, symptomsEndDates.names, symptoms.names, drugReviewPeriod){
 
   data$Sx_resolved <- FALSE
-
-  ## using `all' is conservative estimates
 
   for (i in 1:nrow(data)){
 
@@ -56,12 +125,12 @@ EstimateSymptomsResolved <- function(data, symptomsEndDates.names, symptoms.name
 }
 
 
-#' Group Diagnosis Outcomes
+#' Group Together Diagnosis Outcomes
 #'
-#' ##TODO## do over-lapping groups, not mutually exclusive
+#' [TODO] do over-lapping groups, not mutually exclusive
 #'
-#' @param data
-#'
+#' @param data IDEA study data set
+#' @export
 #' @return data
 
 GroupDiagOutcomes <- function(data){
@@ -93,11 +162,15 @@ GroupDiagOutcomes <- function(data){
 
 #' Remove Patients Records In Data Cleaning
 #'
-#' \code{rmPatientsInCleaning}
+#' Due to duplication, before 2013-08-31 (last date of complete records), not excluded, not EPTB only,
+#' patients not treated before date of first test
 #'
-#' @param data
+#' ##TODO##
+#' should we remove patients whos `means of diagnosis' was IGRA?
+#'
+#' @param data IDEA study data set
 #' @return data
-#'
+#' @export
 
 rmPatientsInCleaning <- function(data){
 
@@ -132,17 +205,23 @@ rmPatientsInCleaning <- function(data){
   ## don't use this anymore- unreliable
   # data <- data[data$testDiagCon_diff>=0 | is.na(data$testDiagCon_diff),]
 
+
+  ## withdrawn, no or invalid consent
+  data <- subset(data, !PatientStudyID%in%c("B008",  "N180",  "N301",  "G045",  "G057",  "G059",  "C026",  "C032",   "C033",  "F017",  "F047",  "F050",  "F057"))
+
+
   data
 }
 
 
 #' Fill-in End Of Treatment Dates
 #'
-#' \code{fillInEndOfTreatmentDate}
+#' If we have the duration of treatment and start of treatment but no
+#' end date then we can calculate the end of treatment date.
 #'
-#' @param data
+#' @param data IDEA study data set
 #' @return data
-#'
+#' @export
 
 fillInEndOfTreatmentDate <- function(data){
   ## add-on treatment duration time when end of treatment date not given
@@ -157,13 +236,13 @@ fillInEndOfTreatmentDate <- function(data){
 }
 
 
-#' Read from database extract.
+#' Read From Database Extract
 #'
-#' \code{joinLevels} takes Access database and updates one of the tables
+#' \code{joinLevels} takes Access database and updates one of the tables.
 #'
-#' @param Patients single table to update the data total database
-#' @return updated full database
-#'
+#' @param Patients Single table to update the data total database
+#' @return codes Updated full database
+#' @export
 
 joinLevels <- function (codes, lookuplist){
     if(!is.factor(codes)){break}
@@ -176,13 +255,13 @@ joinLevels <- function (codes, lookuplist){
 }
 
 
-#' prepend Not taken as extra level
+#' Prepend Not Taken as Extra Level
 #'
-#' \code{joinWithLookups} takes Access database and updates one of the tables
+#' \code{joinWithLookups} takes Access database and updates one of the tables.
 #'
 #' @param Patients single table to update the data total database
-#' @return updated full database
-
+#' @return data Updated full database
+#' @export
 addLevel_Nottaken <- function(data, names){
     for (i in names){
         levels(data[,i]) <- c(levels(data[,i]),"Not taken")
@@ -192,13 +271,13 @@ addLevel_Nottaken <- function(data, names){
 }
 
 
-#' join data set with demographic look-up tables.
+#' Join Data Set With Demographic Look-up Tables
 #'
-#' \code{joinWithLookups} takes Access database and updates one of the tables
+#' \code{joinWithLookups} takes Access database and updates one of the tables.
 #'
 #' @param Patients single table to update the data total database
-#' @return updated full database
-
+#' @return data Updated full database
+#' @export
 joinWithLookups <- function(data){
 
   # data(cob_lookup, envir=environment())
@@ -215,13 +294,13 @@ joinWithLookups <- function(data){
 }
 
 
-#' Convert different classes to Date class.
+#' Convert Different Classes to Date Class
 #'
-#' \code{as.Date.POSIX} takes Access database and updates one of the tables
+#' \code{as.Date.POSIX} takes Access database and updates one of the tables.
 #'
 #' @param Patients single table to update the data total database
-#' @return updated full database
-
+#' @return data Updated full database
+#' @export
 as.Date.POSIX <- function(date){
   # http://stackoverflow.com/questions/8788817/r-converting-posixct-dates-with-bst-gmt-tags-using-as-date
     ## coerce to class Date
@@ -245,7 +324,7 @@ as.Date.POSIX <- function(date){
 #' @param data
 #' @param testDate.names
 #' @return NULL
-
+#' @export
 assert.dateinpast <- function(data, testDate.names){
   for (i in 1:nrow(data)){
     cond <- sapply(data[i,testDate.names], function(x) difftime(x, as.Date.POSIX("2016-01-01")))
@@ -261,7 +340,7 @@ assert.dateinpast <- function(data, testDate.names){
 #' @param data Individual patient records
 #' @param allgrids The idealised pathway look-up tables
 #' @return The joined tables with aggregated outcome wrt Dosanjh categories
-#'
+#' @export
 combineTestResults <- function(test1, test2){
 
     test1 <- as.character(test1)

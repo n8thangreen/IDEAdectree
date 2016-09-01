@@ -10,11 +10,13 @@ is.empty <- function(df){
 }
 
 
-#' Clean IDEA clinical data
+#' Clean IDEA Study Clinical Data Wrapper
 #'
 #' \code{cleanData} is a high-level function to clean IDEA clinical data for analysis.
+#' There are rather a lot of assumptions and imposed contraints on values.
+#' So is a bit subjective.
 #'
-#' @param data Individual patient records
+#' @param data Individual patient records from IDEA
 #' @return data
 
 cleanData <- function(data){
@@ -24,17 +26,15 @@ cleanData <- function(data){
   require(lubridate)
   require(mondate)
 
-
   # TB tests ------------------------------------------------------------------
 
   names(data) <- gsub("testRes", "", names(data))
 
+  ## nb culture included
   test.names.ORIGINAL <- c("QFN", "TSPOT", "TST", "Smear", "TBcult", "BAL", "HistBiop",
                            "NeedleAsp", "PCR", "CXR", "CT", "MRI")
   testDate.names.ORIGINAL <- c("QFNtestDate", "TSPOTtestDate", "TSTtestDate", "SmeartestDate", "TBculttestDate", "BALtestDate", "HistBioptestDate",
                                "NeedleAsptestDate", "PCRtestDate", "CXRtestDate", "CTtestDate", "MRItestDate")
-  ##TODO## don't currently include CSF (cerebro-spinal fluid) sample
-  # should treat this like the BAL data
 
 
   # Discretised groups --------------------------------------------------------
@@ -133,14 +133,14 @@ cleanData <- function(data){
     }
   }
 
+  data <- rm.TooEarly(data, TBdrugStart.names, maxtime=threeWeeks)
+  data <- rm.TooEarly(data, TBDrugEnd.names, maxtime=threeWeeks)
 
   data$TBDrugStart.min <- apply(data[,TBdrugStart.names], 1, min, na.rm=T)
   data$TBDrugEnd.max   <- apply(data[,TBDrugEnd.names], 1, max, na.rm=T)
 
-  data$testDate.min    <- apply(data[, c("DateConsent",testDate.names)], 1, function(x){
-                                  whichdates <- (difftime(x, x[1], units="days")+threeWeeks>0)
-                                  min(x[whichdates], na.rm=T)
-                                })
+  data <- rm.TooEarly(data, testDate.names, maxtime=threeWeeks)
+  data <- calc.testDate.min(data, testDate.names, maxtime=threeWeeks)
 
   data$TBDrugStart.min <- as.Date.POSIX(data$TBDrugStart.min)
   data$TBDrugEnd.max   <- as.Date.POSIX(data$TBDrugEnd.max)
@@ -150,6 +150,7 @@ cleanData <- function(data){
 
 
   # lower limits culture report dates -----------------------------------------
+  ## the culture takes at least _dur_ days to produce a result
 
   dur <- c(POSITIVE=1, NEGATIVE=sixWeeks)   #days
   data$TBculttestDate.orig <- data$TBculttestDate
@@ -178,10 +179,12 @@ cleanData <- function(data){
                     testCultorig_diff = calcTimeToEvent(TBculttestDate.orig),
                     EntryUKtest_diff = year(testDate.min) - EntryUK_year,
 
+                    start.to.Drug = calcTimeToEvent(TBDrugStart.min), #duplication but clearer later-on
                     start.to.Smear = calcTimeToEvent(SmeartestDate),
                     start.to.HistBiop = calcTimeToEvent(HistBioptestDate),
                     start.to.NeedleAsp = calcTimeToEvent(NeedleAsptestDate),
                     start.to.TBcultorig = calcTimeToEvent(TBculttestDate.orig),
+                    start.to.TBcult = calcTimeToEvent(TBculttestDate),
                     start.to.BAL = calcTimeToEvent(BALtestDate),
                     start.to.PCR = calcTimeToEvent(PCRtestDate),
                     start.to.CXR = calcTimeToEvent(CXRtestDate),
@@ -224,7 +227,6 @@ cleanData <- function(data){
   ##TODO##
   ## whats the field for this??
 
-
   data <- fillInEndOfTreatmentDate(data)
 
   data$TBDrug_diff <- difftime(data$TBDrugEnd.max, data$TBDrugStart.min, units="days")
@@ -239,7 +241,8 @@ cleanData <- function(data){
   testDate.freq  <- getDateFrequencies(testDate.names, data)
 
   ## should we fill-in missing dates with 2 month estimates?
-  data$start.to.FU <- ifelse(is.na(data$start.to.FU), data$testDrug_diff_plus63days, data$start.to.FU)
+  # data$start.to.FUmissing <- is.na(data$start.to.FU)
+  # data$start.to.FU <- ifelse(data$start.to.FUmissing, data$testDrug_diff_plus63days, data$start.to.FU)
 
   data <- estimateTimeToDiagnosis(data)
 
@@ -326,11 +329,7 @@ cleanData <- function(data){
 
   data <- EstimateSymptomsResolved(data, symptomsEndDates.names, symptoms.names, drugReviewPeriod)
 
-
-  ## distiguish between when clinical features used to rule-in or rule-out TB
-  data$clinfeatures <- rep("none", nrow(data))
-  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="TRUE"]  <- "TB"
-  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="FALSE"] <- "other"
+  data <- is.diagByClinicalFeatures(data)
 
 
   # estimate counts of each test taken --------------------------------------
@@ -359,11 +358,17 @@ cleanData <- function(data){
 
   data <- calcRiskFactorScore(data)
 
+  ##TODO##
+  #where has this variable gone?
+  # data$PatientWgt[data$PatientWgt==0] <- NA
+
   data <- tidyBALSputumdata(data)
   data <- tidyCXRdata(data)
   data <- tidyCTdata(data)
 
-  data <- data.frame(data, totalcost=calcPatientCostofTests(data))
+  ##TODO##
+  #COSTS argument is now from a distribution done later in a sensitivity analysis
+  # data <- data.frame(data, totalcost=calcPatientCostofTests(data))
 
   data <- droplevels(data)
 

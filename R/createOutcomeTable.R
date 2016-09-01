@@ -37,9 +37,9 @@ get.uniqueDataTestCombinations <- function(pathdata){
 }
 
 
-#' get.statStartToDiagByCovariate
+#' calc.statOutcomeByCovariate
 #'
-#' \code{get.statOutcomeByCovariate}
+#' \code{calc.statOutcomeByCovariate}
 #'
 #' @param field
 #' @param value
@@ -152,15 +152,16 @@ get.pooledtimeandcost <- function(){
 }
 
 
-#' maketable.Dosanjh_TimeCost
+#' Calculate summary statistics to include in final tables
 #'
 #' \code{maketable.Dosanjh_TimeCost}
 #'
 #' @param data
 #' @return matrix
 #'
+#' @seealso \link{{make.tableDiagCost_bootmeanse}}
 
-maketable.Dosanjh_TimeCost <- function(data){
+calc.summarystats_Dosanjh_TimeCost <- function(data){
 
   tab.time <- as.matrix(aggregate(start.to.diag~DosanjhGrouped, data=data, summary, na.rm=T))
   # tab <- cbind(tab, sd=as.matrix(aggregate(start.to.diag~DosanjhGrouped, data=data, sd, na.rm=T))[,2])
@@ -175,7 +176,7 @@ maketable.Dosanjh_TimeCost <- function(data){
 }
 
 
-#' make.testFreqTable
+#' Make test frequency table
 #'
 #' \code{make.testFreqTable}
 #'
@@ -201,37 +202,69 @@ make.testFreqTable <- function(data){
 }
 
 
-#' make.testPerformanceMetricsTable
+#' Make test performance metrics table
 #'
-#' \code{make.testPerformanceMetricsTable}
+#' Includes true and false negatives and positive and negative predictive values.
 #'
-#' @param prop_highriskVECTOR
-#' @param specificityVECTOR
+#' @param prop_highriskVECTOR Clinical judgement threshold as high risk patient
+#' @param specificityVECTOR Rule-out test specificity
 #' @return matrix
 
-make.testPerformanceMetricsTable <- function(prop_highriskVECTOR=c(0.2,0.4,0.6), specificityVECTOR=c(0.9,0.95,0.99)){
-
+make.testPerformanceMetricsTable <- function(data,
+                                             prop_highriskVECTOR = c(0.2, 0.4, 0.6),
+                                             specificityVECTOR = c(0.9, 0.95, 0.99),
+                                             sens = 0.9){
   out <- list()
-  TN <- FN <- PPV <- NPV <- accuracy <- NULL
+  TN <- FN <- PPV <- NPV <- NNT <- NNH <- accuracy <- NULL
 
   for(i in 1:length(prop_highriskVECTOR)){
 
-    out[[i]] <- make.ruleoutTable.pre(prop_highrisk=prop_highriskVECTOR[i])
+    out[[i]] <- make.ruleoutTable.pre(data=data, prop_highrisk = prop_highriskVECTOR[i])$combinedDosanjh
 
     for (j in 1:length(specificityVECTOR)){
 
-      TN <- c(TN, unique(out[[i]]$combinedDosanjh$numTN[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
-      FN <- c(FN, unique(out[[i]]$combinedDosanjh$numFN[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
-      accuracy <- c(accuracy, unique(out[[i]]$combinedDosanjh$Accuracy[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
-      PPV <- c(PPV, unique(out[[i]]$combinedDosanjh$PPV[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
-      NPV <- c(NPV, unique(out[[i]]$combinedDosanjh$NPV[out[[i]]$combinedDosanjh$sensitivity==0.9 & out[[i]]$combinedDosanjh$specificity==specificityVECTOR[j]]))
+      row <- out[[i]]$sensitivity==sens & out[[i]]$specificity==specificityVECTOR[j]
+
+      TN <- c(TN, unique(out[[i]]$numTN[row]))
+      FN <- c(FN, unique(out[[i]]$numFN[row]))
+      PPV <- c(PPV, unique(out[[i]]$PPV[row]))
+      NPV <- c(NPV, unique(out[[i]]$NPV[row]))
+      NNT <- c(NNT, unique(out[[i]]$NNT[row]))
+      NNH <- c(NNH, unique(out[[i]]$NNH[row]))
+      accuracy <- c(accuracy, unique(out[[i]]$Accuracy[row]))
     }
   }
 
-  out <- round(rbind(TN,FN,accuracy,PPV,NPV),2)
+  out <- round(rbind(TN, FN, accuracy, PPV, NPV, NNT, NNH), 2)
   colnames(out) <- as.vector(outer(specificityVECTOR, prop_highriskVECTOR, paste))
   out
 }
 
+
+#' Make array of statistics for each bootstrap sample of IDEA study data
+#'
+#' @param n Number of bootstrap samples
+#'
+#' @return dim 3 array
+
+boot.testPerformanceMetricTable <- function(n = 1000){
+
+  ##TODO##
+  #repeated this type of function for other functions (DRY)
+  #consolidate inot a generic and curry
+
+  dim0 <- dim(make.testPerformanceMetricsTable(data=data))
+  barray <- array(NA, c(dim0, n))
+
+  for(i in 1:n){
+    bdata <- bootstrap.data(data)
+    barray[,,i] <- make.testPerformanceMetricsTable(data=bdata)
+  }
+
+  meanvals <- apply(barray, c(1,2), function(x) round(mean(as.numeric(x)),2))
+  sdvals <- apply(barray, c(1,2), function(x) round(sd(as.numeric(x)),2))
+
+  return(matrix(paste(meanvals, " (",sdvals,")", sep=""), nrow = dim0[1]))
+}
 
 

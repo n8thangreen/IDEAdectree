@@ -1,60 +1,28 @@
-#
-# cat4percent <- seq(0, 100, length = 11)
-# cat4percentPROB <- dbeta(cat4percent/100, 5,2)
-# cat4percentPROB <- cat4percentPROB/sum(cat4percentPROB)
-# thresh <- seq(0, 1, 0.01)
-# INMBoptimal <- EPVI <- mat <- NULL
-# resmax <- 0
-#
-# for (i in cat4percent){
-#
-#   out <- make.ruleoutTable.pre(cat4percent = i, thresh = thresh, Ctest=400)$combinedDosanjh
-#
-#   INMBenhanced <- out$INMB[out$sensitivity==0.8 & out$specificity%in%thresh]
-#   mat <- rbind(mat, INMBenhanced)
-# }
-#
-# INMB.EV <- pmax(0, cat4percentPROB%*%mat)
-# INMB.EVwithPI <- cat4percentPROB%*%matrix(pmax(0, mat), nrow=nrow(mat))
-# EVPI <- INMB.EVwithPI - INMB.EV
-#
-# plot(thresh, EVPI, xlab="specificity", type="o", xlim=c(0.7,1))
-
-# https://en.wikipedia.org/wiki/Expected_value_of_perfect_information
-# which (single) decision would maximise the expected total utility?
-# what decision for each cat4percent would maximise the utility?
-
-##TODO##
-# do the same for ctest on xaxis too...
-
-
-
-
-
-
-# using oakley paper
-
-#  ------------------------------------------------------------------------
-
-library(data.table)
-
 
 #' Incremental Net Monetary Benefit for IDEA enhanced diagnostic pathway
+#'
+#' This a kind of super slimmed-down version of \code{make.ruleoutTable.pre()}.
 #'
 #' @param spec
 #' @param sens
 #' @param pathcost Routine in-practice total cost (time and tests) for a non-TB patient (433+11*55*0.67)
-#' @param Ctest
+#' @param Ctest Unit cost of rule-out test
 #' @param A Cost-effectiveness threshold (per year)
-#' @param q
-#' @param prev
-#' @param FNtime
-#' @param prop_highrisk
+#' @param q QALY
+#' @param prev Cohort prevalence. An 'uncertain' parameter
+#' @param FNtime An 'uncertain' parameter (days)
+#' @param prop_highrisk Threshold high risk predictive probability. An 'uncertain' parameter
 #'
 #' @return INMB
 
-INMB <- function(spec=0.9, sens=0.90, pathcost=838, Ctest=100, A=20000, q=0.67,
+INMB <- function(spec=0.9, sens=0.90, Ctest=100, pathcost=838, A=30000, q=0.67,
                  prev, FNtime, prop_highrisk){
+
+  # require(data.table)
+
+  stopifnot(prev>=0, prev<=1)
+  stopifnot(prop_highrisk>=0, prop_highrisk<=1)
+  stopifnot(FNtime>=0)
 
   A <- A/365
   ruleoutcost <- Ctest + A*q
@@ -71,61 +39,50 @@ INMB <- function(spec=0.9, sens=0.90, pathcost=838, Ctest=100, A=20000, q=0.67,
 }
 
 
-#
-# ## expected value over all unknown parameters
-# N <- 40
-# seqSPEC <- seq(0.8, 1, by=0.02)
-# EVunknown <- rep(NA, length(seqSPEC))
-# out <- rep(NA, N)
-#
-# for (j in 1:length(seqSPEC)){
-#
-#   grid <- data.frame(cbind(FNtime = rnorm(n = N, mean=42, sd=1),
-#                            prev = 1-rbeta(n=N, 5,2),
-#                            prop_highrisk = rbeta(n=N, 4,6)))
-#   for (i in 1:N){
-#
-#     out[i] <- INMB(spec=seqSPEC[j],
-#                    FNtime=grid$FNtime[i], prev=grid$prev[i], prop_highrisk=grid$prop_highrisk[i])
-#   }
-#   EVunknown[j] <- max(0, mean(out))
-# }
-#
-#
-#
-# ## partial expected value of perfect information
-#
-# res <- rep(NA, length(seqSPEC))
-# EVres <- matrix(NA, nrow = nrow(grid), ncol = length(seqSPEC))
-# out <- rep(NA, N)
-#
-# for (k in 1:nrow(grid)){
-#
-#   for (j in 1:length(seqSPEC)){
-#
-#     grid <- data.frame(cbind(FNtime = rnorm(n = N, mean=42, sd=1),
-#                              prev = 1-rbeta(n=N, 5,2),
-#                              prop_highrisk = rbeta(n=N, 4,6)))
-#     for (i in 1:N){
-#
-#       out[i] <- INMB(spec=seqSPEC[j],
-#                      FNtime=grid$FNtime[i], prev=grid$prev[k], prop_highrisk=grid$prop_highrisk[i])
-#     }
-#     res[j] <- max(0, mean(out))
-#   }
-#   EVres[k,] <- res
-# }
-# EVPI <- apply(EVres, 2, mean)
-#
-# plot(seqSPEC, EVPI - EVunknown, type="o", xlab="Specificity")
-#
-# plot(seqSPEC, EVPI, ylim=c(-5,5), type="l", xlab="Specificity")
-# lines(seqSPEC, EVunknown, col="red")
+#' Calculate Expected INMB
+#'
+#' @param spec
+#' @param sens
+#' @param Ctest
+#'
+#' @return INMB sample
+
+calcExpectedINMB <- function(spec=0.9, sens=0.9, Ctest=200){
+
+  grid <- data.frame(cbind(FNtime=rnorm(n=N, mean=42, sd=10),
+                           cat4percent=rbeta(n=N, 5,2)*100,
+                           prop_highrisk=rbeta(n=N, 4,6)))
+
+  out <- NA
+  for (i in 1:nrow(grid)){
+    out[i] <- INMB(spec, sens, Ctest,
+                   FNtime=grid$FNtime[i], prev=1-(grid$cat4percent[i]/100), prop_highrisk=grid$prop_highrisk[i])
+  }
+  out
+}
 
 
+#' Make Expected INMB Table
+#'
+#' @return matrix
+# write.csv(makeExpectedINMBtable(), "temp.csv")
+makeExpectedINMBtable <- function(){
 
-## hard-code parameter expected values
-#  ------------------------------------------------------------------------
+  input <- data.frame(cbind(spec=rep(c(0.8,0.9,0.99), each=3),
+                            sens=rep(c(0.8,0.9,0.99), each=3),
+                            Ctest=c(400,300,200)))
+  out <- outmed <- out1 <- out3 <- NULL
+  for (i in 1:nrow(input)){
+
+    summaryINMB <- summary(calcExpectedINMB(spec=input$spec[i], sens=input$sens[i], Ctest=input$Ctest[i]))
+    # out <- c(out, paste(summaryINMB["Median"], " [", summaryINMB["1st Qu."], ",", summaryINMB["3rd Qu."], "]", sep=""))
+    outmed <- c(outmed, summaryINMB["Median"])
+    out1 <- c(out1, summaryINMB["1st Qu."])
+    out3 <- c(out3, summaryINMB["3rd Qu."])
+  }
+  # return(rbind(t(input), out))
+  return(rbind(t(input), outmed, out1, out3))
+}
 
 
 #' Calculate Expected Value of Information
@@ -134,15 +91,16 @@ INMB <- function(spec=0.9, sens=0.90, pathcost=838, Ctest=100, A=20000, q=0.67,
 #'
 #' @seealso \code{\link{plot.EVPI}}
 
-calc.EVPI <- function(){
+calc.EVPI <- function(N=5000){
 
   ## expected value over all unknown parameters
 
-  seqSPEC <- seq(0.8, 1, by=0.02)
+  seqSPEC  <- seq(0.8, 1, by=0.02)
+  seqSENS  <- c(0.9, 0.99)
+  seqCtest <- c(550, 600)
+
   lseqSPEC <- length(seqSPEC)
   EVunknown <- rep(NA, lseqSPEC)
-  seqSENS <- c(0.9, 0.99)
-  seqCtest <- c(550, 600)
   EVunknown.sens <- NULL
 
   for (Ctest in seqCtest){
@@ -159,7 +117,6 @@ calc.EVPI <- function(){
 
   ## partial expected value of perfect information (EVPI)
 
-  N <- 4000
   res <- rep(NA, lseqSPEC)
   EVres <- matrix(NA, nrow = N, ncol = lseqSPEC)
   EVPIsens <- NULL
@@ -193,7 +150,7 @@ calc.EVPI <- function(){
 #' @param EVPIsens output from \code{calc.EVPI}
 #' @return NULL
 #'
-#' @seealso \code{\link(calc.EVPI}}
+#' @seealso \code{\link{calc.EVPI}}
 
 
 plot.EVPI <- function(EVPIsens){
@@ -209,13 +166,6 @@ plot.EVPI <- function(EVPIsens){
     scale_colour_discrete(name  ="Sensitivity",
                           labels=sort(unique(EVPIsens$sens))) +
     theme(legend.key.width=unit(3,"line"))
-
-
-  #
-  # plot(seqSPEC, EVPI - EVunknown, type="o", xlab="Specificity", ylab="EVPI")
-  #
-  # plot(seqSPEC, EVPI, ylim=c(-5,25), type="l", xlab="Specificity")
-  # lines(seqSPEC, EVunknown, col="red")
 }
 
 

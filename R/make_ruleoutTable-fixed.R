@@ -1,4 +1,4 @@
-#' make.ruleoutTable.fixed
+#' make.ruleoutTable.fixed DEPRECATED
 #'
 #' \code{make.ruleoutTable.fixed} creates the times and costs of a diagnositic pathway for
 #' suspected active TB with and without an initial rule-out test, split by Dosanjh category.
@@ -22,6 +22,8 @@
 #' (\code{highriskAtStart} is remove randomly selected proportion before rule-out test,
 #' \code{testFirst} is test everyone first)
 #' @return list
+#'
+#' @seealso \code{\link{make.ruleoutTable.pre}}
 
 
 make.ruleoutTable.fixed <- function(

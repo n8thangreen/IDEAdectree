@@ -1,5 +1,5 @@
 
-#' get.allDataTestCombinations
+#' Get All Data Test Combinations
 #'
 #' \code{get.allDataTestCombinations}
 #'
