@@ -1,0 +1,55 @@
+---
+title: "Cost and time to diagnosis"
+author: "Nathan Green"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Cost and time to diagnosis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+  
+  
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+collapse = TRUE,
+comment = "#>"
+)
+```
+
+```{r message=FALSE}
+library(IDEAdectree)
+library(treeSimR)
+library(dplyr)
+```
+
+```{r}
+# cleaned IDEA patient data
+proj_folder <- "C:/Users/ngreen1/Google Drive/TB/IDEA/R/packages/IDEAdectree"
+load(paste0(proj_folder, "/data/TBdata_clinical_cleaned.RData"))
+
+# test/procedure costs
+load(paste0(proj_folder, "/data/COSTdistns_allerror.RData"))
+```
+
+```{r warning=FALSE}
+# diagnosis times
+times <- estimate_start_to_diag(data)
+
+# total costs
+cost_distns <- COST.distns.allerror
+
+rcosts <- means_distributions(cost_distns)
+
+costs <- calcPatientCostofTests(data, COSTS = rcosts)
+```
+
+
+```{r fig.width=7, fig.height=7}
+# plots
+
+plot(times, costs, xlim = c(0, 500))
+plot(times, costs, xlim = c(0, 50))
+```
+
