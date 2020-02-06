@@ -17,4 +17,3 @@ data
 There are rather a lot of assumptions and imposed contraints on values.
 So is a bit subjective.
 }
-

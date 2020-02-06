@@ -4,7 +4,8 @@
 \alias{make.ruleoutTable.cat4percent}
 \title{Make rule-out table for multiple cohort prevalences}
 \usage{
-make.ruleoutTable.cat4percent(cat4percent.seq = seq(1, 100, by = 1), Ctest)
+make.ruleoutTable.cat4percent(cat4percent.seq = seq(1, 100, by = 1),
+  Ctest)
 }
 \arguments{
 \item{Ctest}{}
@@ -15,4 +16,3 @@ out
 \description{
 Iterate over a range of prevalences 0-100% and row-bind results (potentially a high number of rows).
 }
-

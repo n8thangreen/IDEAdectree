@@ -7,9 +7,9 @@
 make.ruleoutTable.fixed(thresh = seq(from = 1, to = 0.7, by = -0.01),
   Ctest = c(10, 50), FNcost = 0, FNtime = 42L, ruleouttime = 1L,
   pathreturn = 1L, qaly = 0.67, A = 55, npatients = nrow(data),
-  cat4percent = table(data$DosanjhGrouped)[4] * 100/npatients, comb = NA,
-  cat3TB = TRUE, cat4propfollowup = 0, prop_highrisk = 0.72,
-  stat = "Median", model = "testFirst")
+  cat4percent = table(data$DosanjhGrouped)[4] * 100/npatients,
+  comb = NA, cat3TB = TRUE, cat4propfollowup = 0,
+  prop_highrisk = 0.72, stat = "Median", model = "testFirst")
 }
 \arguments{
 \item{thresh}{test sensitivity and specificity}
@@ -56,4 +56,3 @@ suspected active TB with and without an initial rule-out test, split by Dosanjh 
 \seealso{
 \code{\link{make.ruleoutTable.pre}}
 }
-

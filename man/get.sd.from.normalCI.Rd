@@ -21,4 +21,3 @@ sd
 \description{
 Get standard deviation from Normal confidence interval
 }
-

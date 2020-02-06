@@ -15,4 +15,3 @@ Calculate Expected Value of Information
 \seealso{
 \code{\link{plot.EVPI}}
 }
-

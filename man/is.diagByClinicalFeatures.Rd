@@ -15,4 +15,3 @@ data
 \description{
 Add a new column with \code{TB, other,} or \code{NA}.
 }
-

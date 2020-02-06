@@ -15,4 +15,3 @@ out
 \description{
 Iterate over a range of follow-up times and row-bind results (potentially a high number of rows).
 }
-

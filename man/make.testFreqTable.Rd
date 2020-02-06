@@ -12,4 +12,3 @@ matrix
 \description{
 \code{make.testFreqTable}
 }
-

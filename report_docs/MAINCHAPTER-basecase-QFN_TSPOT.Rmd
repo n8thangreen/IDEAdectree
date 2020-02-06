@@ -5,6 +5,8 @@ date: "4 February 2016"
 output: 
   word_document: 
     keep_md: yes
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -38,7 +40,7 @@ attach(senspec.env)
 
 dat <- list()
 
-yearindays <- 365
+yearindays <- 365.25
 WTP <- c(20000, 30000)/yearindays
 
 ```
@@ -78,40 +80,96 @@ WTP <- c(20000, 30000)/yearindays
 ```
 
 
-```{r , fig.width=9, fig.height=9, fig.keep='all'}
+```{r TSPOT-noindet, fig.width=9, fig.height=9, fig.keep='all'}
 
-dat1 <- IDEAdectree.simple(data=data, name.ruleout = "TSPOT",
-                           SPEC = TSPOT.noIndet.spec.mean, SENS = TSPOT.noIndet.sens.mean, 
-                           SPECvar = TSPOT.noIndet.spec.var, SENSvar = TSPOT.noIndet.sens.var)
-dat2 <- IDEAdectree.simple(data=data, name.ruleout = "TSPOT",
-                           SPEC = TSPOT.HIV.noIndet.spec.mean, SENS = TSPOT.HIV.noIndet.sens.mean, 
-                           SPECvar = TSPOT.HIV.noIndet.spec.var, SENSvar = TSPOT.HIV.noIndet.sens.var)
-dat3 <- IDEAdectree.simple(data=data, name.ruleout = "TSPOT",
-                           SPEC = TSPOT.HIVneg.noIndet.spec.mean, SENS = TSPOT.HIVneg.noIndet.sens.mean, 
-                           SPECvar = TSPOT.HIVneg.noIndet.spec.var, SENSvar = TSPOT.HIVneg.noIndet.sens.var)
+dat1 <- IDEAdectree.simple(data = data,
+                           name.ruleout = "TSPOT",
+                           SPEC = TSPOT.noIndet.spec.mean,
+                           SENS = TSPOT.noIndet.sens.mean, 
+                           SPECvar = TSPOT.noIndet.spec.var,
+                           SENSvar = TSPOT.noIndet.sens.var)
+
+dat2 <- IDEAdectree.simple(data = data,
+                           name.ruleout = "TSPOT",
+                           SPEC = TSPOT.HIV.noIndet.spec.mean,
+                           SENS = TSPOT.HIV.noIndet.sens.mean, 
+                           SPECvar = TSPOT.HIV.noIndet.spec.var,
+                           SENSvar = TSPOT.HIV.noIndet.sens.var)
+
+dat3 <- IDEAdectree.simple(data = data,
+                           name.ruleout = "TSPOT",
+                           SPEC = TSPOT.HIVneg.noIndet.spec.mean,
+                           SENS = TSPOT.HIVneg.noIndet.sens.mean, 
+                           SPECvar = TSPOT.HIVneg.noIndet.spec.var,
+                           SENSvar = TSPOT.HIVneg.noIndet.sens.var)
 
 dat$e <- cbind(dat1$e, dat2$e[,2], dat3$e[,2])
 dat$c <- cbind(dat1$c, dat2$c[,2], dat3$c[,2])
 
 intlabels <- c("Current",
-               "Enhanced TSPOT: All, no Indets", "Enhanced TSPOT: HIV positive, no Indets", "Enhanced TSPOT: HIV negative, no Indets")
+               "Enhanced TSPOT: All, no Indets",
+               "Enhanced TSPOT: HIV positive, no Indets",
+               "Enhanced TSPOT: HIV negative, no Indets")
 
 # m <- bcea(e=dat$e, c=-dat$c, ref=1, interventions = intlabels)
 # contour2(m, wtp=WTP, graph = "ggplot2", ICER.size=2, pos=c(0.1,0.9))+#, xlim=c(-5,5), ylim=c(-200,200)) +
 #   ggtitle("") #+ geom_abline(intercept = 0, slope = WTP)
 
-my.plot.bcea(dat1, dat2, dat3, wtp=WTP, intlabels = intlabels, wtpNEG = "Y")
-my.plot.bcea(dat1, dat2, dat3, wtp=WTP*yearindays, intlabels = c("All","HIV positive","HIV negative"), wtpNEG = "Y", SCALEcosts=FALSE, SCALEdays=FALSE, labelLong=FALSE, TITLE="(a)", N=769)
+my.plot.bcea(dat1, dat2, dat3, wtp = WTP, intlabels = intlabels, wtpNEG = "Y")
 
-my.plot.bcea(dat1, dat2, dat3, wtp=WTP, intlabels = intlabels, contour=TRUE, wtpNEG = "Y")
-my.plot.bcea(dat1, dat2, dat3, wtp=WTP*yearindays, intlabels = c("All","HIV positive","HIV negative"), contour=TRUE, wtpNEG = "Y", SCALEcosts=FALSE, SCALEdays=FALSE, labelLong=FALSE, TITLE="(a)", N=769)
+my.plot.bcea(dat1, dat2, dat3,
+             wtp = WTP*yearindays,
+             intlabels = c("All", "HIV positive", "HIV negative"),
+             wtpNEG = "Y",
+             SCALEcosts = FALSE,
+             SCALEdays = FALSE,
+             labelLong = FALSE,
+             TITLE = "(a)",
+             N = 769)
 
-my.plot.bcea(dat1, dat2, dat3, wtp=WTP, intlabels = intlabels, contour=TRUE, LEVELS=0.5, wtpNEG = "Y")
-my.plot.bcea(dat1, dat2, dat3, wtp=WTP*yearindays, intlabels = c("All","HIV positive","HIV negative"), contour=TRUE, LEVELS=0.5, wtpNEG = "Y", SCALEcosts=FALSE, SCALEdays=FALSE, labelLong=FALSE, TITLE="(a)", N=769)
+my.plot.bcea(dat1, dat2, dat3,
+             wtp = WTP,
+             intlabels = intlabels,
+             contour = TRUE,
+             wtpNEG = "Y")
 
-my.plot.ceac(dat1, dat2, dat3, intlabels = c("All","HIV positive","HIV negative"), labelLong=FALSE, TITLE="(a)")
-my.plot.ceac(dat1, dat2, dat3, intlabels = c("All","HIV positive","HIV negative"), labelLong=FALSE, TITLE="(a)", SCALEcosts=FALSE, SCALEdays=FALSE, N=769)
-my.plot.ceac(dat1, dat2, dat3, intlabels = c("All","HIV positive","HIV negative"), labelLong=FALSE, TITLE="(a)", SCALEcosts=FALSE, SCALEdays=FALSE, N=769, CI=TRUE)
+my.plot.bcea(dat1, dat2, dat3,
+             wtp = WTP*yearindays,
+             intlabels = c("All", "HIV positive","HIV negative"),
+             contour = TRUE,
+             wtpNEG = "Y",
+             SCALEcosts = FALSE,
+             SCALEdays = FALSE,
+             labelLong = FALSE,
+             TITLE = "(a)",
+             N = 769)
+
+my.plot.bcea(dat1, dat2, dat3,
+             wtp = WTP,
+             intlabels = intlabels,
+             contour = TRUE,
+             LEVELS = 0.5,
+             wtpNEG = "Y")
+
+my.plot.bcea(dat1, dat2, dat3,
+             wtp = WTP*yearindays,
+             intlabels = c("All", "HIV positive", "HIV negative"),
+             contour = TRUE,
+             LEVELS = 0.5,
+             wtpNEG = "Y",
+             SCALEcosts = FALSE,
+             SCALEdays = FALSE,
+             labelLong = FALSE,
+             TITLE = "(a)",
+             N = 769)
+
+## CEAC
+
+my.plot.ceac(dat1, dat2, dat3, intlabels = c("All","HIV positive","HIV negative"), labelLong = FALSE, TITLE = "(a)")
+
+my.plot.ceac(dat1, dat2, dat3, intlabels = c("All","HIV positive","HIV negative"), labelLong = FALSE, TITLE = "(a)", SCALEcosts = FALSE, SCALEdays = FALSE, N = 769)
+
+my.plot.ceac(dat1, dat2, dat3, intlabels = c("All","HIV positive","HIV negative"), labelLong = FALSE, TITLE = "(a)", SCALEcosts = FALSE, SCALEdays = FALSE, N = 769, CI = TRUE)
 
 ## in years (not days)
 # m <- bcea(e=dat$e/365, c=-dat$c, ref=1, interventions = intlabels)
@@ -121,11 +179,15 @@ my.plot.ceac(dat1, dat2, dat3, intlabels = c("All","HIV positive","HIV negative"
 ```
 
 
-```{r , fig.width=9, fig.height=9, fig.keep='all'}
+```{r TSPOT-indet, fig.width=9, fig.height=9, fig.keep='all'}
 
-dat1 <- IDEAdectree.simple(data=data, name.ruleout = "TSPOT",
-                           SPEC = TSPOT.Indet.spec.mean, SENS = TSPOT.Indet.sens.mean, 
-                           SPECvar = TSPOT.Indet.spec.var, SENSvar = TSPOT.Indet.sens.var)
+dat1 <- IDEAdectree.simple(data = data,
+                           name.ruleout = "TSPOT",
+                           SPEC = TSPOT.Indet.spec.mean,
+                           SENS = TSPOT.Indet.sens.mean, 
+                           SPECvar = TSPOT.Indet.spec.var,
+                           SENSvar = TSPOT.Indet.sens.var)
+
 dat2 <- IDEAdectree.simple(data=data, name.ruleout = "TSPOT",
                            SPEC = TSPOT.HIV.Indet.spec.mean, SENS = TSPOT.HIV.Indet.sens.mean, 
                            SPECvar = TSPOT.HIV.Indet.spec.var, SENSvar = TSPOT.HIV.Indet.sens.var)

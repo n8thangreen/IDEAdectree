@@ -9,4 +9,3 @@ assert.dateinpast(data, testDate.names)
 \description{
 \code{assert.dateinpast} Checks whether all of the dates all in the past
 }
-

@@ -12,4 +12,3 @@ pathdata
 \description{
 \code{get.uniqueDataTestCombinations}
 }
-

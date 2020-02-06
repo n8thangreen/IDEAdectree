@@ -16,4 +16,3 @@ data
 If we have the duration of treatment and start of treatment but no
 end date then we can calculate the end of treatment date.
 }
-

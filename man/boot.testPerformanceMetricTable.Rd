@@ -15,4 +15,3 @@ dim 3 array
 \description{
 Make array of statistics for each bootstrap sample of IDEA study data
 }
-

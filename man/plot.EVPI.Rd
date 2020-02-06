@@ -15,4 +15,3 @@ Plot Expected Value of Information curves
 \seealso{
 \code{\link{calc.EVPI}}
 }
-

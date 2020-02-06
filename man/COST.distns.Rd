@@ -33,4 +33,3 @@ The distribution can be characterised as \code{gamma} for a gamma distribution,
 \code{unif} for a uniform distribution or \code{none} for a single point value.
 }
 \keyword{datasets}
-

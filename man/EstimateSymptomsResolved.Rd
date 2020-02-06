@@ -22,4 +22,3 @@ Checks if there is a response to treatment or self-cured.
 Uses \code{all} as conservative estimates to check if the time between the observed end dates and earliest time that a patient was
 put on treatment is smaller than the time to follow-up by clinicians.
 }
-

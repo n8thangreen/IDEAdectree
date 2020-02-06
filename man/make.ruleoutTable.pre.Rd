@@ -7,9 +7,9 @@
 make.ruleoutTable.pre(thresh = seq(from = 1, to = 0.8, by = -0.01),
   Ctest = c(200, 300), FNcost = 0, FNtime = 42, ruleouttime = 1L,
   pathreturn = 1L, qaly = 0.67, A = 55, npatients = nrow(data),
-  cat4percent = table(data$DosanjhGrouped)[4] * 100/npatients, comb = NA,
-  cat3TB = TRUE, cat4propfollowup = 0, prop_highrisk = 0.4,
-  stat = "Median", model = "pretest.fixed")
+  cat4percent = table(data$DosanjhGrouped)[4] * 100/npatients,
+  comb = NA, cat3TB = TRUE, cat4propfollowup = 0,
+  prop_highrisk = 0.4, stat = "Median", model = "pretest.fixed")
 }
 \arguments{
 \item{thresh}{test sensitivity and specificity}
@@ -58,4 +58,3 @@ list
 \code{make.ruleoutTable.pre} creates the times and costs of a diagnositic pathway for
 suspected active TB with and without an initial rule-out test, split by Dosanjh category.
 }
-

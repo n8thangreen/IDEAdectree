@@ -12,4 +12,3 @@ data
 \description{
 \code{calc.statOutcomeByCovariate}
 }
-

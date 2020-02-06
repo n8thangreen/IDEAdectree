@@ -1,110 +1,80 @@
 
-#' Sum the Cost of All Specified Treatments for Each Patient
+#' Sum the Cost of All Specified Tests for Each Patient
 #'
-#' \code{calcPatientCostofTests} sums the total cost of diagnostic tests in the pathway.
+#' \deqn{\sum freq_i \times count_i \times cost_i}
 #'
-#' If a BAL is taken we include the cost of the proceduce and the additional cost of a culture and smear if used for these.
+#' $freq$ are when a single entry in the dataset represent more that one unit cost.
+#' $count$ are the numbeer of separate occasion at test is taken.
+#' $cost$ is the unit cost.
+#'
+#' Most frequencies are singular but some or >1.
+#' Some costs consist of more than element too and these are hard-coded in to the function;
+#' If a BAL is taken we include the cost of the procedure and the additional
+#' cost of a culture and smear if used for these.
 #'
 #' @param data IDEA study data set
 #' @param COSTS Named vector each test/procedure and unit costs.
-#' @param x3 Should the smear and culture be multiplied by 3? It is standard practice to perform 3 of each with a sputum sample.
+#'              If a list of cost is provided then the named mean value is used.
+#' @param x3 Should the smear and culture be multiplied by 3?
+#'           It is standard practice to perform 3 of each with a sputum sample.
 #'
-#' @return single value per patient
+#' @return Single value per patient (vector)
+#' @export
+#'
+calcPatientCostofTests <- function(data,
+                                   COSTS,
+                                   x3 = TRUE){
 
-calcPatientCostofTests <- function(data, COSTS, x3 = TRUE){
+  x3 <-
+    assertive.base::use_first(x3) %>%
+    assertive.base::coerce_to("logical")
 
   freq <- ifelse(x3, 3, 1)
-  if(is(COSTS, "list")){COSTS <- COSTS[["mean"]]}
+  if (is(COSTS, "list")) { COSTS <- COSTS[["mean"]] }
 
-  namesNumEachTest <- grep(names(data), pattern = "Num_",value = TRUE)
+  namesNumEachTest <- grep(names(data),
+                           pattern = "Num_",
+                           value = TRUE)
 
   testcosts <- c(TBcult = freq*COSTS$TBcult,
                  Smear = freq*COSTS$Smear,
-                 IGRA=COSTS$IGRA,
-                 TSTres=COSTS$TSTres,
-                 TSPOT=COSTS$TSPOT,
-                 QFN=COSTS$QFN,
-                 CXR=COSTS$CXR,
-                 CSF=COSTS$CSF,
-                 BAL=COSTS$BAL,
-                 HistBiop=COSTS$HistBiop,
-                 NeedleAsp=COSTS$NeedleAsp,
-                 PCR=COSTS$PCR,
-                 CT=COSTS$CT,
-                 MRI=COSTS$MRI,
-                 PET=COSTS$PET,
+                 IGRA  = (COSTS$TSPOT + COSTS$QFN)/2,  #COSTS$IGRA,
+                 TSTres = COSTS$TSTres,
+                 TSPOT  = COSTS$TSPOT,
+                 QFN = COSTS$QFN,
+                 CXR = COSTS$CXR,
+                 CSF = COSTS$CSF,
+                 BAL = COSTS$BAL,
+                 HistBiop  = COSTS$HistBiop,
+                 NeedleAsp = COSTS$NeedleAsp,
+                 PCR = COSTS$PCR,
+                 CT  = COSTS$CT,
+                 MRI = COSTS$MRI,
+                 PET = COSTS$PET,
+                 EBUS = COSTS$EBUS,
                  TBcultSmearBAL = COSTS$TBcult + COSTS$Smear)#,
-                 # Risk_factors=0)  #why did I include this??
+  # Risk_factors=0)  #why did I include this??
 
-  ## if there's no test count data
-  if(length(namesNumEachTest)==0){
-    data <- as.matrix(data) #need to do it this way because factor
-    data[data%in%c("POSITIVE", "NEGATIVE")] <- 1
-    data[data!=1 | is.na(data)] <- 0
+  ## if no test count data
+  if (length(namesNumEachTest) == 0) {
+
+    data <- as.matrix(data) # coherse because factor
+
+    data[data %in% c("POSITIVE", "NEGATIVE")] <- 1L  # taken test
+    data[data != 1 | is.na(data)] <- 0L              # not take
+
     class(data) <- "numeric"
-    testcosts[colnames(data)]%*%t(data)
+
+    res <- testcosts[colnames(data)] %*% t(data)
+
   }else{
-    ## cross-product to account for multiple same tests per patient
-    c(testcosts%*%t(data[,paste("Num_",names(testcosts),sep="")]))
-  }
-}
 
-
-#' Sample from Standard Distributions
-#'
-#' @param param.distns
-#'
-#' @return vector of sample points
-#' @examples
-#'
-#' param.distns <- list(TBcult=list(distn="gamma",
-#' params=c(mean=22.29, sd=2.23)),
-#' Smear=list(distn="gamma",
-#'            params=c(mean=7, sd=0.68)),
-#' IGRA=list(distn="unif",
-#'           params=c(min=24, max=100)),
-#' TSTres=list(distn="unif",
-#'             params=c(min=8, max=32)),
-#' TSPOT=list(distn="unif",
-#'            params=c(min=45, max=99)),
-#' QFN=list(distn="unif",
-#'          params=c(min=36.8, max=84)),
-#' CXR=list(distn="unif",
-#'          params=c(min=26, max=41)),
-#' CSF=list(distn="none",
-#'          params=c(mean=0)),
-#' BAL=list(distn="none",
-#'          params=c(mean=612+23.24)),
-#' HistBiop=list(distn="none",
-#'               params=c(mean=25)),
-#' NeedleAsp=list(distn="none",
-#'                params=c(mean=90.21)),
-#' PCR=list(distn="none",
-#'          params=c(mean=202.45)),
-#' CT=list(distn="none",
-#'         params=c(mean=300)),
-#' MRI=list(distn="none",
-#'          params=c(mean=375)),
-#' PET=list(distn="none",
-#'          params=c(mean=713)))
-
-sample.distributions <- function(param.distns){
-
-  out <- data.frame(matrix(NA, nrow = 1, ncol = length(COST.distns)))
-  for (i in 1:length(param.distns)){
-
-    out[i] <- switch(param.distns[[i]]$distn,
-                     gamma = rgamma(1, shape = MoM.gamma(mean=param.distns[[i]]$params["mean"],
-                                                         var=param.distns[[i]]$params["sd"]^2)$shape,
-                                       scale = MoM.gamma(mean=param.distns[[i]]$params["mean"],
-                                                         var=param.distns[[i]]$params["sd"]^2)$scale),
-                     unif = runif(1, param.distns[[i]]$params["min"],
-                                     param.distns[[i]]$params["max"]),
-                     none = param.distns[[i]]$params["mean"])
+    ## cross-product to account for multiple
+    ## same tests per patient
+    Num_names <- paste("Num_", names(testcosts), sep = "")
+    res <- c(testcosts %*% t(data[ ,Num_names]))
   }
 
-  names(out) <- names(param.distns)
-
-  return(out)
+  return(res)
 }
 

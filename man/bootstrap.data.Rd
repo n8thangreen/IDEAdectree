@@ -16,4 +16,3 @@ Bootstrapped dataset
 Bootstrap patient data for mean and standard deviation estimates
 for current in-practice routine pathway (without rule-out test).
 }
-

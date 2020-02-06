@@ -4,8 +4,8 @@
 \alias{INMB}
 \title{Incremental Net Monetary Benefit for IDEA enhanced diagnostic pathway}
 \usage{
-INMB(spec = 0.9, sens = 0.9, Ctest = 100, pathcost = 838, A = 30000,
-  q = 0.67, prev, FNtime, prop_highrisk)
+INMB(spec = 0.9, sens = 0.9, Ctest = 100, pathcost = 838,
+  A = 30000, q = 0.67, prev, FNtime, prop_highrisk)
 }
 \arguments{
 \item{Ctest}{Unit cost of rule-out test}
@@ -28,4 +28,3 @@ INMB
 \description{
 This a kind of super slimmed-down version of \code{make.ruleoutTable.pre()}.
 }
-

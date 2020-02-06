@@ -29,4 +29,3 @@ but can use an imputed completed sample (prefered).
 \details{
 This is the function used in \code{\link{boot.calcIdealisedTestCosts}}.
 }
-

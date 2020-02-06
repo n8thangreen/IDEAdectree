@@ -15,4 +15,3 @@ out
 \description{
 Iterate over bootstrap samples and row-bind results (potentially a high number of rows).
 }
-

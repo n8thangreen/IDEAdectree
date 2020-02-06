@@ -12,4 +12,3 @@ res.all
 \description{
 \code{join.stratifiedOutcomeTables}
 }
-

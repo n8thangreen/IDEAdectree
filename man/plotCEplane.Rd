@@ -28,4 +28,3 @@ Plot Cost-Effectiveness Plane With Contours
 data("TBdata_clinical_cleaned")
 plotCEplane(data, N=1000, 400, 0.8)
 }
-

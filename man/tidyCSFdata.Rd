@@ -23,4 +23,3 @@ Used for extra-pulmonary TB only.
 
 TODO
 }
-

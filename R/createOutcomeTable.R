@@ -157,10 +157,11 @@ get.pooledtimeandcost <- function(){
 #' \code{maketable.Dosanjh_TimeCost}
 #'
 #' @param data
+#'
 #' @return matrix
 #'
-#' @seealso \link{{make.tableDiagCost_bootmeanse}}
-
+#' @seealso
+#'
 calc.summarystats_Dosanjh_TimeCost <- function(data){
 
   tab.time <- as.matrix(aggregate(start.to.diag~DosanjhGrouped, data=data, summary, na.rm=T))

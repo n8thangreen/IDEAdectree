@@ -24,4 +24,3 @@ We assume that if there was a BAL then there was also a previous negative sputum
 (ignore the possibility if they couldn't take a sputum sample)
 and if there was a BAL there this was for both smear and culture.
 }
-

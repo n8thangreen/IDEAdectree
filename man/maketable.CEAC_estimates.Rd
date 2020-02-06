@@ -15,4 +15,3 @@ none
 \description{
 Print a Table of Cost-Effectiveness Acceptability Curve Estimates
 }
-

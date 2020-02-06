@@ -17,4 +17,3 @@ The joined tables with aggregated outcome wrt Dosanjh categories
 \description{
 \code{getDateFrequencies} returns joined tables of inputs and predicted outcomes
 }
-

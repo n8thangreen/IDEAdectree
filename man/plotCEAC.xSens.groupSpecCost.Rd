@@ -13,4 +13,3 @@ plotCEAC.xSens.groupSpecCost(dat.temp)
 x-axis of rule-out test sensitivity and grouped
 by specificity and cost of test
 }
-

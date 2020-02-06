@@ -5,7 +5,7 @@
 #' Bootstrap patient data for mean and standard deviation estimates
 #' for current in-practice routine pathway (without rule-out test).
 #'
-#' @param data
+#' @param data IDEA dataset
 #'
 #' @return Bootstrapped dataset
 #' @export
@@ -16,20 +16,21 @@ bootstrap.data <- function(data){
 }
 
 
-#' Create an enhanced pathway individual-level dataset of time to diagnosis and test costs with random samples
+#' Create an 'enhanced' pathway individual-level dataset of time to diagnosis and test costs with random samples
 #'
 #' This can be used to then bootstrap patient data for mean and standard deviation estimates
 #' for enhanced pathway (with rule-out test) by representing as mixture model.
 #'
-#' @param data
-#' @param sens Sensitivity
-#' @param spec Specificity
+#' @param data IDEA dataset
+#' @param sens Sensitivity of test
+#' @param spec Specificity of test
 #' @param FNtime Follow-up time of false negatives
 #' @param testcost Rule-out test unit cost
 #' @param prop_highrisk Clinical judgement threshold of high risk patients
 #'
 #' @return Bootstrapped dataset
 #' @export
+#'
 calc.enhancedDiagTimeAndCost.bootsample <- function(data,
                                                     sens=0.9, spec=0.9, FNtime=42, testcost=200, prop_highrisk=0.4){
 

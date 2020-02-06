@@ -15,4 +15,3 @@ data Updated full database
 \description{
 \code{as.Date.POSIX} takes Access database and updates one of the tables.
 }
-

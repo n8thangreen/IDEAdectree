@@ -4,10 +4,10 @@
 #' Cost-effectiveness plane plot.
 #' Borrowed ideas from the \code{BCEA} package.
 #'
-#' @param dat1 Output from IDEAdectree.simple
-#' @param dat2 Output from IDEAdectree.simple
-#' @param dat3 Output from IDEAdectree.simple
-#' @param dat4 Output from IDEAdectree.simple
+#' @param dat1 (e,c) pairs
+#' @param dat2 (e,c) pairs
+#' @param dat3 (e,c) pairs
+#' @param dat4 (e,c) pairs
 #' @param wtp Willingness-to-pay, may be a vector i.e. multiple lines
 #' @param intlabels Intervention labels to use in the legend
 #' @param contour Include ellipses?
@@ -19,19 +19,30 @@
 #'
 #' @return plot
 #'
-#' @seealso  \link{\code{DEAdectree.simple}}
+#' @seealso
 #' @export
-my.plot.bcea <- function(dat1, dat2, dat3, dat4=NA, wtp, intlabels,
-                         contour=FALSE, LEVELS=0.95,
+my.plot.bcea <- function(dat1,
+                         dat2 = NA,
+                         dat3 = NA,
+                         dat4 = NA,
+                         wtp = 20000,
+                         intlabels,
+                         contour = FALSE,
+                         LEVELS = 0.95,
                          # XLIM=c(-15,5), YLIM=c(-120,50),
-                         XLIM=c(-20,20), YLIM=c(-100000,50000),
+                         XLIM = c(-20,20),
+                         YLIM = c(-100000,50000),
                          wtpNEG = NA,
-                         SCALEdays=TRUE, SCALEcosts=TRUE, labelLong=TRUE, TITLE="", N=1){
+                         SCALEdays = TRUE,
+                         SCALEcosts = TRUE,
+                         labelLong = TRUE,
+                         TITLE = "",
+                         N = 1){
 
   require(MASS)
   require(car)
 
-  daysinyear <- 365
+  daysinyear <- 365.25
 
   if(is.na(dat4)){
     dat4 <- dat3
@@ -145,7 +156,7 @@ my.plot.bcea <- function(dat1, dat2, dat3, dat4=NA, wtp, intlabels,
 #'
 #' @return plot
 #'
-#' @seealso  \link{\code{DEAdectree.simple}}
+#' @seealso
 #' @export
 my.plot.ceac <- function(dat1, dat2, dat3, dat4=NA, intlabels, wtpNEG = NA,
                          labelLong=TRUE, TITLE="", SCALEdays=TRUE, SCALEcosts=TRUE, N=1, CI=FALSE){

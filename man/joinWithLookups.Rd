@@ -15,4 +15,3 @@ data Updated full database
 \description{
 \code{joinWithLookups} takes Access database and updates one of the tables.
 }
-

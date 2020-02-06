@@ -22,4 +22,3 @@ Bootstrap calculate idealised test costs [DEPRECATED]
 \seealso{
 \code{\link{calcIdealisedTestCosts}}.
 }
-

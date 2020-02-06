@@ -19,4 +19,3 @@ testDate.min
 \description{
 Which test dates are earliest within a time window from the date of study consent.
 }
-

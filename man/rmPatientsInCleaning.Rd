@@ -20,4 +20,3 @@ patients not treated before date of first test
 ##TODO##
 should we remove patients whos `means of diagnosis' was IGRA?
 }
-

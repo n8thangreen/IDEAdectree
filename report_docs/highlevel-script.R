@@ -12,8 +12,8 @@ library(IDEAdectree)
 # install.pandoc()
 
 
-filenames.full <- list.files(path="./docs", pattern = "\\.Rmd$", full.names = TRUE)
-filenames <- list.files(path="./docs", pattern = "\\.Rmd$", full.names = FALSE)
+filenames.full <- list.files(path = "./docs", pattern = "\\.Rmd$", full.names = TRUE)
+filenames <- list.files(path = "./docs", pattern = "\\.Rmd$", full.names = FALSE)
 filenames <- sub("^([^.]*).*", "\\1", filenames)
 
 
@@ -23,8 +23,9 @@ filenames <- sub("^([^.]*).*", "\\1", filenames)
 # system(paste0("pandoc -o ", filenames[2], ".docx ", filenames[2], ".md"))
 
 ## this way saves figures separately too ##
-for(i in 1:length(filenames)){
-  knitr::knit(input=filenames.full[i], output = paste0("docs/", filenames[i], ".md"))
+for (i in 1:length(filenames)) {
+  knitr::knit(input = filenames.full[i],
+              output = paste0("docs/", filenames[i], ".md"))
   # rmarkdown::render(input=paste0("docs/", filenames[i], ".md"), output_format="all")
 }
 

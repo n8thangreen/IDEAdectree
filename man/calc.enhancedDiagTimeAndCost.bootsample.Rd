@@ -25,4 +25,3 @@ Bootstrapped dataset
 This can be used to then bootstrap patient data for mean and standard deviation estimates
 for enhanced pathway (with rule-out test) by representing as mixture model.
 }
-

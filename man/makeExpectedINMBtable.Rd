@@ -12,4 +12,3 @@ matrix
 \description{
 Make Expected INMB Table
 }
-

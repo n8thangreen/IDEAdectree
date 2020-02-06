@@ -19,7 +19,6 @@
 #' @param c.ruleout Rule-out test unit cost
 #' @param name.ruleout Name of rule-out test to get at distribution
 #' @param quant Quantile value of time to diagnosis and costs
-#' @param WTP Willingness-to-pay
 #' @param utility QALY adjustment utility due to active TB
 #' @param N Number of patients. The number in the data is used as default.
 #' @param wholecohortstats Should the output stats be the total or per patient
@@ -46,7 +45,7 @@ IDEAdectree.simple <- function(data,
                                nsim = 1000,
                                costDistns = COST.distns.allerror,  #COST.distns
                                prevalence = 0.25,
-                               cutoff = 1,
+                               cutoff = 1, #ie no clinical judgement
                                FNtime = 42,
                                FNdist = TRUE,
                                SENS = 0.9,
@@ -55,8 +54,7 @@ IDEAdectree.simple <- function(data,
                                SPECvar = 0.005,
                                c.ruleout = 100,
                                name.ruleout = NA,
-                               quant = 0.5,
-                               WTP = 20000, #30000
+                               quant = 0.5, #median
                                utility = NA,
                                N = nrow(data),
                                wholecohortstats = FALSE) {
@@ -64,24 +62,27 @@ IDEAdectree.simple <- function(data,
   require(triangle)
 
   stopifnot(name.ruleout %in% c(NA, names(costDistns)))
+  stopifnot(quant >= 0, quant <= 1)
   stopifnot(nsim > 0,
             prevalence >= 0,
             prevalence <= 1,
+            c.ruleout >= 0,
             cutoff >= 0,
             cutoff <= 1,
             FNtime >= 0,
             SENS >= 0,
             SENS <= 1,
             SPEC >= 0,
-            SPEC <= 1,
-            c.ruleout >= 0,
-            WTP >= 0)
-  stopifnot(quant >= 0, quant <= 1)
+            SPEC <= 1)
 
-  A <- WTP/365.25  #per day
+  median <- purrr::partial(...f = quantile, probs = quant, na.rm = TRUE)
+
   #QALY adjustment absolute utility
   e <- c <- NULL
 
+  if (wholecohortstats) N <- 1
+
+  # 2 month follow-up appointment times
   FNdens <-
     as.numeric(data$start.to.FU) %>%
     subset(data$VisitFU == "2 month FU" &
@@ -95,13 +96,20 @@ IDEAdectree.simple <- function(data,
 
   sens.betaparams <- MoM.beta(xbar = SENS, vbar = SENSvar)
   spec.betaparams <- MoM.beta(xbar = SPEC, vbar = SPECvar)
+
+  #################
+  # sample params #
+  #################
+
   sensitivity <- rbeta(n = nsim, shape1 = sens.betaparams$a, shape2 = sens.betaparams$b)
   specificity <- rbeta(n = nsim, shape1 = spec.betaparams$a, shape2 = spec.betaparams$b)
 
+  # respiratory medicine, multi-professional (National tariff)
   visit1cost <- rgamma(n = nsim, shape = 53.3, scale = 4.52)
   visit2cost <- rgamma(n = nsim, shape = 18.78, scale = 7.62)
 
   if (is.na(utility)) {
+    # QoL detriment: triangle(0.11, 0.21, 0.31)
     utility <- rtriangle(n = nsim, a = 0.69, b = 0.89)  #1-QALY loss i.e. relative to non-TB (<1)
   }else{
     utility <- rep(utility, time = nsim)}
@@ -139,16 +147,19 @@ IDEAdectree.simple <- function(data,
     t.ruleout <- runif(1, min = 2, max = 14)
     h.ruleout <- utility[i] * t.ruleout
 
-    if (FNdist) {h.FN <- utility[i] * FNdens$x[sum(runif(1) > Fx)]
-    }else{h.FN <- utility[i]*FNtime}
+    if (FNdist) {
+      h.FN <- utility[i] * FNdens$x[sum(runif(1) > Fx)]
+    }else{
+      h.FN <- utility[i]*FNtime}
 
     TB  <- rbinom(n = 1, size = N, prob = prevalence)
     nTB <- N - TB
 
-    TBhighrisk <- rbinom(n = 1, size = TB, prob = 1 - pbeta(cutoff, 7, 3))
+    # where are these numbers from?
+    TBhighrisk <- rbinom(n = 1, size = TB, prob = 1 - pbeta(cutoff, 7, 3))  # clinical positive diagnosis #dont currently use this
     TBlowrisk  <- TB - TBhighrisk
 
-    nTBhighrisk <- rbinom(n = 1, size = nTB, prob = 1 - pbeta(cutoff,3,7))
+    nTBhighrisk <- rbinom(n = 1, size = nTB, prob = 1 - pbeta(cutoff, 3, 7))
     nTBlowrisk  <- nTB - nTBhighrisk
 
     TBpos <- rbinom(n = 1, size = TBlowrisk, prob = sensitivity[i])
@@ -158,45 +169,66 @@ IDEAdectree.simple <- function(data,
     nTBneg <- nTBlowrisk - nTBpos
 
     ## final subpopulation sizes
-    pop  <- c(TBhighrisk, nTBhighrisk, TBpos, TBneg, nTBpos, nTBneg)
+    pop <- c(TBhighrisk, nTBhighrisk, TBpos, TBneg, nTBpos, nTBneg)
     stopifnot(sum(pop) == N)
 
-    ## current time and cost estimates ##
+    ## current observed time and cost estimates ##
 
     sboot.nonTB <- sample(which(data$DosanjhGrouped == 4), replace = TRUE)
     sboot.TB <- sample(which(data$DosanjhGrouped %in% c(1,2,3)), replace = TRUE)
 
-    c.std.nonTB <- quantile(totalcost[sboot.nonTB], probs = quant, na.rm = TRUE)
-    c.std.TB <- quantile(totalcost[sboot.TB], probs = quant, na.rm = TRUE)
-    start.to.diag.nonTB <- quantile(data$start.to.diag[sboot.nonTB], probs = quant, na.rm = TRUE)
-    start.to.diag.TB <- quantile(data$start.to.diag[sboot.TB], probs = quant, na.rm = TRUE)
+    c.std.nonTB <- median(totalcost[sboot.nonTB])
+    c.std.TB <- median(totalcost[sboot.TB])
+    start.to.diag.nonTB <- median(data$start.to.diag[sboot.nonTB])
+    start.to.diag.TB <- median(data$start.to.diag[sboot.TB])
 
     # h.std <- utility[i]*start.to.diag
     h.std.TB <- utility[i]*start.to.diag.TB
     h.std.nonTB <- utility[i]*start.to.diag.nonTB
 
-    ## outcomes
-    # cost <- c(c.std, c.std, c.std+c.ruleout, c.std+c.ruleout, c.std+c.ruleout, c.ruleout)
-    # health <- c(h.std, h.std, h.std+h.ruleout, h.std+h.ruleout+h.FN, h.std+h.ruleout, h.ruleout)
 
-    cost   <- visit1cost[i] + c(c.std.TB, c.std.nonTB, c.std.TB + c.ruleout, c.std.TB + c.ruleout + visit2cost[i], c.std.nonTB + c.ruleout, c.ruleout)
-    health <- c(h.std.TB, h.std.nonTB, h.std.TB + h.ruleout, h.std.TB + h.ruleout + h.FN, h.std.nonTB + h.ruleout, h.ruleout)
+    ##########
+    # totals #
+    ##########
 
-    Ec.old <- (visit1cost[i]*N) + (c.std.TB*TB + c.std.nonTB*nTB)     #THIS IS A BIT OF A PROBLEM FOR VARYING PREVALENCE IN ORDER TO BE A COMPARISON FOR ALL...
-    Ee.old <- (h.std.TB*TB) + (h.std.nonTB*nTB)                       #SIMILARLY THE SAMPLED CURRENT TIMES AND COSTS
+    # each terminal node is decision tree
+    cost <-
+      visit1cost[i] +
+      c(c.std.TB,
+        c.std.nonTB,
+        c.std.TB + c.ruleout,                  #TB pos test
+        c.std.TB + c.ruleout + visit2cost[i],  #TB neg test
+        c.std.nonTB + c.ruleout,               #not TB pos test
+        c.ruleout)                             #not TB neg test
 
-    if (wholecohortstats) N <- 1
+    health <-
+      c(h.std.TB,
+        h.std.nonTB,
+        h.std.TB + h.ruleout,
+        h.std.TB + h.ruleout + h.FN,
+        h.std.nonTB + h.ruleout,
+        h.ruleout)
 
-    Ec.old <- Ec.old/N
-    Ee.old <- Ee.old/N
+    Ec.old <- (visit1cost[i]*N + c.std.TB*TB + c.std.nonTB*nTB)/N     #THIS IS A BIT OF A PROBLEM FOR VARYING PREVALENCE IN ORDER TO BE A COMPARISON FOR ALL...
+    Ee.old <- (h.std.TB*TB + h.std.nonTB*nTB)/N                       #SIMILARLY THE SAMPLED CURRENT TIMES AND COSTS
 
+
+    ##TODO## fix this bug. quick fix only
+    ##why have I got these checks?...
 
     ## expected values
-    if (length(pop) == length(health)) {  ##TODO## fix this bug. quick fix
+    if (length(pop) == length(health)) {
+
       if (!is.na(Ec.old) & !is.na(Ee.old)) {
-        e <- rbind(e, c(Ee.old, (pop %*% health)/N))
-        c <- rbind(c, c(Ec.old, (pop %*% cost)/N))}
+
+        e <- rbind(e,
+                   c(Ee.old, (pop %*% health)/N))
+        c <- rbind(c,
+                   c(Ec.old, (pop %*% cost)/N))
+      }
     }else{
+
+      #just repeat last row; why?
       e <- rbind(e, e[nrow(e), ])
       c <- rbind(c, c[nrow(c), ])
     }

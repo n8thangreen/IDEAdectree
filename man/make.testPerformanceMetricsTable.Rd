@@ -4,8 +4,8 @@
 \alias{make.testPerformanceMetricsTable}
 \title{Make test performance metrics table}
 \usage{
-make.testPerformanceMetricsTable(data, prop_highriskVECTOR = c(0.2, 0.4, 0.6),
-  specificityVECTOR = c(0.9, 0.95, 0.99), sens = 0.9)
+make.testPerformanceMetricsTable(data, prop_highriskVECTOR = c(0.2, 0.4,
+  0.6), specificityVECTOR = c(0.9, 0.95, 0.99), sens = 0.9)
 }
 \arguments{
 \item{prop_highriskVECTOR}{Clinical judgement threshold as high risk patient}
@@ -18,4 +18,3 @@ matrix
 \description{
 Includes true and false negatives and positive and negative predictive values.
 }
-

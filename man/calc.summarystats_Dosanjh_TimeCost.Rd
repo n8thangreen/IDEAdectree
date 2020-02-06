@@ -6,6 +6,9 @@
 \usage{
 calc.summarystats_Dosanjh_TimeCost(data)
 }
+\arguments{
+\item{data}{}
+}
 \value{
 matrix
 }
@@ -13,6 +16,5 @@ matrix
 \code{maketable.Dosanjh_TimeCost}
 }
 \seealso{
-\link{{make.tableDiagCost_bootmeanse}}
-}
 
+}

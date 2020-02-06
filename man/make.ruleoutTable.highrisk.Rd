@@ -4,7 +4,8 @@
 \alias{make.ruleoutTable.highrisk}
 \title{Make rule-out table of multiple clinically judged highrisk cut-offs}
 \usage{
-make.ruleoutTable.highrisk(highrisk.seq = seq(0.1, 0.99, by = 0.01), Ctest)
+make.ruleoutTable.highrisk(highrisk.seq = seq(0.1, 0.99, by = 0.01),
+  Ctest)
 }
 \arguments{
 \item{Ctest}{}
@@ -15,4 +16,3 @@ out
 \description{
 Iterate over a range of cut-off values [0,1] and row-bind results (potentially a high number of rows).
 }
-

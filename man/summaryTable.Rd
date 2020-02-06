@@ -17,4 +17,3 @@ dataframe
 \description{
 \code{summaryTable} gives basic statistics for patient groupings in IDEA data extract
 }
-

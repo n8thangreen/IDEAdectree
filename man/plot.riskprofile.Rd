@@ -21,4 +21,3 @@ none
 \description{
 Cost and probability of final outcomes (along each distinct path) in decision tree.
 }
-

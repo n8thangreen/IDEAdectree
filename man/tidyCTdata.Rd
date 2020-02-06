@@ -12,4 +12,3 @@ data
 \description{
 Tidy multiple chest X-ray data
 }
-

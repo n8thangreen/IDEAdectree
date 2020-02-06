@@ -1,15 +1,4 @@
 
-#' TRUE element if NA or ""
-#'
-#' @param df dataframe
-#'
-#' @return logical array
-
-is.empty <- function(df){
-  return(is.na(df) | df=="")
-}
-
-
 #' Clean IDEA Study Clinical Data Wrapper
 #'
 #' \code{cleanData} is a high-level function to clean IDEA clinical data for analysis.
@@ -58,8 +47,8 @@ cleanData <- function(data){
   data$TSTres[!is.na(data$TST) & data$TSTcut=="[0,6)"] <- "NEGATIVE"
   data$TSTres[!is.na(data$TST) & data$TSTcut=="[6,15)" & data$PrevBCG==TRUE] <- "NEGATIVE"
 
-  data$IGRA[data$IGRA=="BORDERLINE"] <- NA
-  data$IGRA[data$IGRA=="INDETERMINATE"] <- NA
+  data$IGRA[data$IGRA == "BORDERLINE"] <- NA
+  data$IGRA[data$IGRA == "INDETERMINATE"] <- NA
 
   data$IGRAorTST <- combineTestResults(data$TSTres, data$IGRA)
 
@@ -105,7 +94,7 @@ cleanData <- function(data){
   }
 
   ## missing dates
-  data[data=="1900-01-01"] <- NA
+  data[data == "1900-01-01"] <- NA
 
   data$EntryUK_year <- year(data$EntryUK)
 
@@ -125,7 +114,7 @@ cleanData <- function(data){
 
     for (i in TBdrugStart.names){
       data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i] <-
-        min(data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i], na.rm=T)
+        min(data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i], na.rm = TRUE)
     }
     for (j in TBDrugEnd.names){
       data[data$PatientStudyID==id & !is.na(data$PatientStudyID), j] <-
@@ -133,14 +122,14 @@ cleanData <- function(data){
     }
   }
 
-  data <- rm.TooEarly(data, TBdrugStart.names, maxtime=threeWeeks)
-  data <- rm.TooEarly(data, TBDrugEnd.names, maxtime=threeWeeks)
+  data <- rm.TooEarly(data, TBdrugStart.names, maxtime = threeWeeks)
+  data <- rm.TooEarly(data, TBDrugEnd.names, maxtime = threeWeeks)
 
-  data$TBDrugStart.min <- apply(data[,TBdrugStart.names], 1, min, na.rm=T)
-  data$TBDrugEnd.max   <- apply(data[,TBDrugEnd.names], 1, max, na.rm=T)
+  data$TBDrugStart.min <- apply(data[ ,TBdrugStart.names], 1, min, na.rm=T)
+  data$TBDrugEnd.max   <- apply(data[ ,TBDrugEnd.names], 1, max, na.rm=T)
 
-  data <- rm.TooEarly(data, testDate.names, maxtime=threeWeeks)
-  data <- calc.testDate.min(data, testDate.names, maxtime=threeWeeks)
+  data <- rm.TooEarly(data, testDate.names, maxtime = threeWeeks)
+  data <- calc.testDate.min(data, testDate.names, maxtime = threeWeeks)
 
   data$TBDrugStart.min <- as.Date.POSIX(data$TBDrugStart.min)
   data$TBDrugEnd.max   <- as.Date.POSIX(data$TBDrugEnd.max)
@@ -157,7 +146,7 @@ cleanData <- function(data){
   dur.each <- as.vector(dur[as.character(data$TBcult)])
   data <- transform(data, TBculttestDate.resMin = testDate.min+dur.each)
   data$TBculttestDate <- apply(data, 1,
-                               function(x) max(x["TBculttestDate"], x["TBculttestDate.resMin"], na.rm=T))
+                               function(x) max(x["TBculttestDate"], x["TBculttestDate.resMin"], na.rm = TRUE))
   data$TBcultCens <- data$TBculttestDate!=data$TBculttestDate.orig
 
 
@@ -203,16 +192,16 @@ cleanData <- function(data){
 
   # View(data.frame(data$PatientStudyID, data$testDate.min, data$DateVisitFU, data$DateVisitFU0, data$start.to.FU)[order(data$PatientStudyID),])  #check
 
-  data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.CXR, data$start.to.MRI, data$start.to.PET, na.rm=T)
-  data$start.to.IGRA  <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=T)
-  data$start.to.other <- pmax(data$start.to.other1, data$start.to.other2, na.rm=T)
+  data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.CXR, data$start.to.MRI, data$start.to.PET, na.rm = TRUE)
+  data$start.to.IGRA  <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=TRUE)
+  data$start.to.other <- pmax(data$start.to.other1, data$start.to.other2, na.rm=TRUE)
 
   #NeedleAsp isnt a test but a sampling technique so could be used for other test
-  data$start.to.Histology <- pmax(data$start.to.HistBiop, data$start.to.NeedleAsp, na.rm=T)
+  data$start.to.Histology <- pmax(data$start.to.HistBiop, data$start.to.NeedleAsp, na.rm=TRUE)
 
   data$start.to.clinicalfeatures <- with(data, pmax(start.to.TBcultorig, start.to.Smear, start.to.Histology,
                                                     start.to.BAL, start.to.PCR, start.to.TST,
-                                                    start.to.Imaging, start.to.IGRA, start.to.other, na.rm=T))
+                                                    start.to.Imaging, start.to.IGRA, start.to.other, na.rm=TRUE))
 
   ## only interested in 2 month followup
   # data$start.to.FU[data$VisitFU!="2 month FU"] <- NA
@@ -285,7 +274,7 @@ cleanData <- function(data){
   data[,test.names][is.empty(data[,test.names])] <- "Not taken"
 
   data$Country <- joinLevels(data$Country, list("UK" = c("ENGLAND","IRELAND","UNITED KINGDOM","WALES","SCOTLAND")))
-  data$Country[data$Country=="N/A"] <- NA
+  data$Country[data$Country == "N/A"] <- NA
   data$Country <- droplevels(data$Country)
 
 
@@ -293,7 +282,7 @@ cleanData <- function(data){
 
   data$Alt_diag <- !data$TBconfirmed & !data$Diagoutcome%in%c("Indeterminate","Not given",NA,"")
 
-  data$jobrisk <- data$New_occupation=="Healthcare worker"
+  data$jobrisk <- data$New_occupation == "Healthcare worker"
 
   data <- GroupDiagOutcomes(data)
 
@@ -336,9 +325,9 @@ cleanData <- function(data){
 
   tests <- c("TBcult", "Smear", "IGRA", "TSTres", "TSPOT", "QFN", "CXR", "CSF", "BAL", "HistBiop", "NeedleAsp", "PCR", "CT", "MRI", "PET")
 
-  NumEachTest <- data.frame(apply(data[,tests]!="Not taken", 2, as.numeric))
+  NumEachTest <- data.frame(apply(data[,tests] != "Not taken", 2, as.numeric))
   NumEachTest[is.na(NumEachTest)] <- 0
-  names(NumEachTest) <- paste("Num_", tests, sep="")
+  names(NumEachTest) <- paste("Num_", tests, sep = "")
   data <- data.frame(data, NumEachTest)
 
 

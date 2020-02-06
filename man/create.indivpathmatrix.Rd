@@ -12,4 +12,3 @@ pathdata
 \description{
 \code{create.indivpathmatrix} create a table of each distinct pathway through the decision tree
 }
-

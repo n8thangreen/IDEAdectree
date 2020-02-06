@@ -18,4 +18,3 @@ Remove Dates That are Before the Earliest Time For the Given Suspected TB Episod
 \seealso{
 \code{\link{calc.Date.min}}
 }
-

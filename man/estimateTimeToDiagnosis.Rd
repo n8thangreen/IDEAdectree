@@ -26,4 +26,3 @@ The rules for estimating time to diagnosis are in priority order:
  \item {could use \code{min(DateDiagCon, lasttestDate)} isntead?}
  }
 }
-

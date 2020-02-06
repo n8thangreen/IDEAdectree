@@ -16,4 +16,3 @@ using a logistic regression calculate model probability predictions.
 ##TODO##
 add clinician or hospital history covariate, maybe multilevel?
 }
-

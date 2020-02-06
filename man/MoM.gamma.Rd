@@ -20,4 +20,3 @@ Method of Moments Gamma Distribution Parameter Transformation
 \seealso{
 MoM.beta
 }
-

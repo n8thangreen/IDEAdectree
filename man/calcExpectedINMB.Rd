@@ -15,4 +15,3 @@ INMB sample
 \description{
 Calculate Expected INMB
 }
-

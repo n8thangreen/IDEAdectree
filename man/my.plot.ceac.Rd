@@ -5,8 +5,8 @@
 \title{My Version of the Cost-Effectiveness Acceptability Curve Plot}
 \usage{
 my.plot.ceac(dat1, dat2, dat3, dat4 = NA, intlabels, wtpNEG = NA,
-  labelLong = TRUE, TITLE = "", SCALEdays = TRUE, SCALEcosts = TRUE,
-  N = 1, CI = FALSE)
+  labelLong = TRUE, TITLE = "", SCALEdays = TRUE,
+  SCALEcosts = TRUE, N = 1, CI = FALSE)
 }
 \arguments{
 \item{dat1}{Output from IDEAdectree.simple}
@@ -31,7 +31,3 @@ plot
 \description{
 Borrowed ideas from the \code{BCEA} package.
 }
-\seealso{
-\link{\code{DEAdectree.simple}}
-}
-

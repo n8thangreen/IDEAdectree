@@ -4,19 +4,19 @@
 \alias{my.plot.bcea}
 \title{my.plot.bcea}
 \usage{
-my.plot.bcea(dat1, dat2, dat3, dat4 = NA, wtp, intlabels, contour = FALSE,
-  LEVELS = 0.95, XLIM = c(-20, 20), YLIM = c(-1e+05, 50000),
-  wtpNEG = NA, SCALEdays = TRUE, SCALEcosts = TRUE, labelLong = TRUE,
-  TITLE = "", N = 1)
+my.plot.bcea(dat1, dat2 = NA, dat3 = NA, dat4 = NA, wtp = 20000,
+  intlabels, contour = FALSE, LEVELS = 0.95, XLIM = c(-20, 20),
+  YLIM = c(-1e+05, 50000), wtpNEG = NA, SCALEdays = TRUE,
+  SCALEcosts = TRUE, labelLong = TRUE, TITLE = "", N = 1)
 }
 \arguments{
-\item{dat1}{Output from IDEAdectree.simple}
+\item{dat1}{(e,c) pairs}
 
-\item{dat2}{Output from IDEAdectree.simple}
+\item{dat2}{(e,c) pairs}
 
-\item{dat3}{Output from IDEAdectree.simple}
+\item{dat3}{(e,c) pairs}
 
-\item{dat4}{Output from IDEAdectree.simple}
+\item{dat4}{(e,c) pairs}
 
 \item{wtp}{Willingness-to-pay, may be a vector i.e. multiple lines}
 
@@ -41,7 +41,3 @@ plot
 Cost-effectiveness plane plot.
 Borrowed ideas from the \code{BCEA} package.
 }
-\seealso{
-\link{\code{DEAdectree.simple}}
-}
-
