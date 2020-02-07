@@ -5,49 +5,80 @@
 #'
 #' @param data IDEA study data set.
 #' @param testDate.names Names of all test dates for each patient.
-#' @param maxtime The earliest allowable date before the date of consent for a test to be taken and still be for the same episode of TB.
+#' @param maxtime The earliest allowable date before the date of consent for a test
+#'                to be taken and still be for the same episode of TB.
 #' @export
-#' @return testDate.min
+#' @return testDate.min for each patient appended to original dataframe
+#'
+#' @examples
+#'
+#' testDate.names <- c("TBculttestDate","QFNtestDate", "TSPOTtestDate", "TSTtestDate", "SmeartestDate", "BALtestDate", "HistBioptestDate")
+#' maxtime <- 2
+#'
+calc.testDate.min <- function(data,
+                              testDate.names,
+                              maxtime){
+  require(reshape2)
 
-calc.testDate.min <- function(data, testDate.names, maxtime){
+  DateConsent <- data$DateConsent
+  col_names <- c("PatientStudyID", testDate.names)
 
-  dates <- data[,c("DateConsent", testDate.names)]
-  data$testDate.min <- apply(dates, 1,
-                             function(x){
-                               whichdates <- (difftime(x, x["DateConsent"], units="days") + maxtime)>=0
-                               min(x[whichdates], na.rm=TRUE)
-                             })
-  data
+  res <-
+    data %>%
+    select(col_names) %>%
+    mutate_at(vars(-PatientStudyID), as_date) %>%
+    melt(id.vars = 'PatientStudyID') %>%
+    group_by(variable) %>%
+    mutate(DateConsent,
+           keep = value - DateConsent + maxtime >= 0 & !is.na(value)) %>%
+    ungroup() %>%
+    filter(keep == TRUE) %>%
+    group_by(PatientStudyID) %>%
+    summarise(testDate.min = min(value)) %>%
+    merge(data, ., by = "PatientStudyID")
+
+  return(res)
 }
 
 
 #' Remove Dates That are Before the Earliest Time For the Given Suspected TB Episode
 #'
-#' @param data
-#' @param Date.names
-#' @param maxtime
+#' @param data IDEA study dataset
+#' @param Date.names column names to check
+#' @param maxtime maimum time in window
 #'
 #' @inheritParams calc.Date.min
 #'
-#' @return dates
+#' @return original data with too early dates filled with NA
 #' @export
 #' @seealso \code{\link{calc.Date.min}}
 
-rm.TooEarly <- function(data, Date.names, maxtime){
+rm.TooEarly <- function(data,
+                        Date.names,
+                        maxtime){
 
-  dates <- data[,c("DateConsent", Date.names)]
-  tooearly.Dates <- t(apply(dates, 1,
-                                function(x){
-                                  whichdates <- (difftime(x, x["DateConsent"], units="days") + maxtime)<0
-                                }))
-  data[,c("DateConsent", Date.names)][tooearly.Dates] <- NA
+
+  whichdates <- function(x)
+    (difftime(time1 = x,
+              time2 = x["DateConsent"],
+              units = "days") + maxtime) < 0
+
+  tooearly <-
+    data %>%
+    select("DateConsent", Date.names) %>%
+    apply(MARGIN = 1,
+          FUN = whichdates) %>%
+    t()
+
+  data[ ,c("DateConsent", Date.names)][tooearly] <- NA
+
   data
 }
 
 
 #' Distiguish Between When Clinical Features Used to Rule-in or Rule-out TB
 #'
-#' Add a new column with \code{TB, other,} or \code{NA}.
+#' Add a new column with \code{TB, other} or \code{NA}.
 #'
 #' @param data
 #'
@@ -56,8 +87,10 @@ rm.TooEarly <- function(data, Date.names, maxtime){
 is.diagByClinicalFeatures <- function(data){
 
   data$clinfeatures <- rep("none", nrow(data))
-  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="TRUE"]  <- "TB"
-  data$clinfeatures[grepl(x = data$Diagnostic_mean, pattern="Clinical") & data$TBconfirmed=="FALSE"] <- "other"
+  data$clinfeatures[grepl(x = data$Diagnostic_mean,
+                          pattern = "Clinical") & data$TBconfirmed == "TRUE"]  <- "TB"
+  data$clinfeatures[grepl(x = data$Diagnostic_mean,
+                          pattern = "Clinical") & data$TBconfirmed == "FALSE"] <- "other"
   data
 }
 
@@ -76,8 +109,8 @@ is.diagByClinicalFeatures <- function(data){
 calcRiskFactorScore <- function(data){
 
   riskfacs <- c("WHOcut","jobrisk","numSymptoms","TBcont","PatientAge","Sex","Ethnclass","CurrHomeless","HIVpos")
-  formula <- paste("TBconfirmed~", paste(riskfacs,collapse="+"), sep="")
-  fit <- glm(formula, data=data, family = binomial, na.action = na.exclude)
+  formula <- paste("TBconfirmed~", paste(riskfacs,collapse = "+"), sep = "")
+  fit <- glm(formula, data = data, family = binomial, na.action = na.exclude)
   data$riskfacScore <- predict(fit, type = "response", na.action = na.exclude)
   data
 }
@@ -96,13 +129,16 @@ calcRiskFactorScore <- function(data){
 #' @export
 #' @return data
 
-EstimateSymptomsResolved <- function(data, symptomsEndDates.names, symptoms.names, drugReviewPeriod){
+EstimateSymptomsResolved <- function(data,
+                                     symptomsEndDates.names,
+                                     symptoms.names,
+                                     drugReviewPeriod){
 
   data$Sx_resolved <- FALSE
 
   for (i in 1:nrow(data)){
 
-    cols <- symptomsEndDates.names[unlist(data[i,symptoms.names])]
+    cols <- symptomsEndDates.names[unlist(data[i, symptoms.names])]
 
     if(all(is.na(cols))){   #no symptoms
       data$Sx_resolved[i] <- FALSE
@@ -111,12 +147,14 @@ EstimateSymptomsResolved <- function(data, symptomsEndDates.names, symptoms.name
       observedEndDates[is.na(observedEndDates)] <- as.Date("2020/01/01")       #replace missing with large dates
 
       if(data$step1Diag[i]){
-        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) (x - data$TBDrugStart.min[i])<drugReviewPeriod))      #response to treatment
+        data$Sx_resolved[i] <- all(sapply(observedEndDates,
+                                          function(x) (x - data$TBDrugStart.min[i]) < drugReviewPeriod))      #response to treatment
         ## could alternatively have same as below?
         ## ...
       }else{
         # data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) x <= data[i,"TBculttestDate.orig"]))    #self-cured
-        data$Sx_resolved[i] <- all(sapply(observedEndDates, function(x) x <= data[i,"TBculttestDate"]))
+        data$Sx_resolved[i] <- all(sapply(observedEndDates,
+                                          function(x) x <= data[i, "TBculttestDate"]))
       }
     }
   }

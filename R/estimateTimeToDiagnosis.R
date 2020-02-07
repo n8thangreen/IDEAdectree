@@ -29,9 +29,11 @@ estimateTimeToDiagnosis <- function(data){
       data$start.to.diag[i] <- min(data$testDrug_diff[i],
                                    data$start.to.TBcultorig[i],
                                    na.rm = TRUE)
-      data$start.to.diag[i] <- ifelse(is.na(data$start.to.diag[i]),
-                                      0,
-                                      data$start.to.diag[i])
+
+      ##TODO: not sure why changed NAs to 0s here?
+      # data$start.to.diag[i] <- ifelse(is.na(data$start.to.diag[i]),
+      #                                 0,
+      #                                 data$start.to.diag[i])
 
     }else{
       data$start.to.diag[i] <- getDiagnosisTimeViaMeans(data, i)}
@@ -41,15 +43,14 @@ estimateTimeToDiagnosis <- function(data){
   data$start.to.diag[data$start.to.diag < 0] <- NA
   data$testDiagCon_diff[data$testDiagCon_diff < 0] <- NA
 
-  tooBigLimit <- 130  #days
+  tooBigLimit <- 130  #days; ~4 months from expert input
 
   tooBig <-
     data$start.to.diag > tooBigLimit &
     data$testDiagCon_diff < tooBigLimit &
-    !is.na(data$start.to.diag) &
     !is.na(data$testDiagCon_diff)
 
-  start_to_diag_sub <- tooBig & is.na(data$start.to.diag)
+  start_to_diag_sub <- tooBig | is.na(data$start.to.diag)
 
   data$start.to.diag[start_to_diag_sub] <- data$testDiagCon_diff[start_to_diag_sub]
 

@@ -1,14 +1,17 @@
 
-#' Clean IDEA Study Clinical Data Wrapper
+#' Clean IDEA Study Clinical Data
 #'
-#' \code{cleanData} is a high-level function to clean IDEA clinical data for analysis.
+#' A high-level function to clean IDEA clinical data for analysis.
 #' There are rather a lot of assumptions and imposed contraints on values.
 #' So is a bit subjective.
 #'
+#' @param save_data
 #' @param data Individual patient records from IDEA
+#'
 #' @return data
 
-cleanData <- function(data){
+cleanData <- function(data,
+                      save_data = FALSE){
 
   # load(file=data)   #data: file address (string)
 
@@ -22,17 +25,19 @@ cleanData <- function(data){
   ## nb culture included
   test.names.ORIGINAL <- c("QFN", "TSPOT", "TST", "Smear", "TBcult", "BAL", "HistBiop",
                            "NeedleAsp", "PCR", "CXR", "CT", "MRI")
-  testDate.names.ORIGINAL <- c("QFNtestDate", "TSPOTtestDate", "TSTtestDate", "SmeartestDate", "TBculttestDate", "BALtestDate", "HistBioptestDate",
+  testDate.names.ORIGINAL <- c("QFNtestDate", "TSPOTtestDate", "TSTtestDate", "SmeartestDate",
+                               "TBculttestDate", "BALtestDate", "HistBioptestDate",
                                "NeedleAsptestDate", "PCRtestDate", "CXRtestDate", "CTtestDate", "MRItestDate")
 
 
   # Discretised groups --------------------------------------------------------
-  data$TSTcut <- cut(data$TST, breaks=c(0,6,15,100), right=FALSE)  #used by Yemesi @ Bham
+  data$TSTcut <- cut(data$TST, breaks = c(0,6,15,100), right = FALSE)  #used by Yemesi @ Bham
 
   test.names <- c("QFN", "TSPOT", "TST", "TSTcut", "Smear", "TBcult", "CSF", "BAL",
                   "HistBiop", "NeedleAsp", "PCR", "CXR", "CT", "MRI")
 
-  data[,c(test.names,"Othertest1Res","Othertest2Res")] <- data.frame(apply(data[,c(test.names,"Othertest1Res","Othertest2Res")], 2, toupper))
+  data[,c(test.names,"Othertest1Res","Othertest2Res")] <-
+    data.frame(apply(data[ ,c(test.names,"Othertest1Res","Othertest2Res")], 2, toupper))
 
   data$IGRA <- combineTestResults(data$QFN, data$TSPOT)
 
@@ -42,10 +47,10 @@ cleanData <- function(data){
   # Combine with BCG status -------------------------------------------------------------
 
   data$TSTres <- ""
-  data$TSTres[!is.na(data$TST) & data$TSTcut!="[0,6)" & data$PrevBCG==FALSE] <- "POSITIVE"
-  data$TSTres[!is.na(data$TST) & data$TSTcut=="[15,100)" & data$PrevBCG==TRUE] <- "POSITIVE"
-  data$TSTres[!is.na(data$TST) & data$TSTcut=="[0,6)"] <- "NEGATIVE"
-  data$TSTres[!is.na(data$TST) & data$TSTcut=="[6,15)" & data$PrevBCG==TRUE] <- "NEGATIVE"
+  data$TSTres[!is.na(data$TST) & data$TSTcut != "[0,6)" & data$PrevBCG == FALSE] <- "POSITIVE"
+  data$TSTres[!is.na(data$TST) & data$TSTcut == "[15,100)" & data$PrevBCG == TRUE] <- "POSITIVE"
+  data$TSTres[!is.na(data$TST) & data$TSTcut == "[0,6)"] <- "NEGATIVE"
+  data$TSTres[!is.na(data$TST) & data$TSTcut == "[6,15)" & data$PrevBCG == TRUE] <- "NEGATIVE"
 
   data$IGRA[data$IGRA == "BORDERLINE"] <- NA
   data$IGRA[data$IGRA == "INDETERMINATE"] <- NA
@@ -55,8 +60,8 @@ cleanData <- function(data){
 
   # look for PET in Othertests---------------------------------------------
 
-  PETtest1taken <- grepl("PET", data$Othertest1Name, ignore.case=TRUE)
-  PETtest2taken <- grepl("PET", data$Othertest2Name, ignore.case=TRUE)
+  PETtest1taken <- grepl("PET", data$Othertest1Name, ignore.case = TRUE)
+  PETtest2taken <- grepl("PET", data$Othertest2Name, ignore.case = TRUE)
 
   ## PET test results, when taken
   PET1 <- PET2 <- rep(NA, nrow(data))
@@ -113,20 +118,20 @@ cleanData <- function(data){
   for (id in unique(data$PatientStudyID)[!is.na(unique(data$PatientStudyID))]){
 
     for (i in TBdrugStart.names){
-      data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i] <-
-        min(data[data$PatientStudyID==id & !is.na(data$PatientStudyID), i], na.rm = TRUE)
+      data[data$PatientStudyID == id & !is.na(data$PatientStudyID), i] <-
+        min(data[data$PatientStudyID == id & !is.na(data$PatientStudyID), i], na.rm = TRUE)
     }
     for (j in TBDrugEnd.names){
-      data[data$PatientStudyID==id & !is.na(data$PatientStudyID), j] <-
-        min(data[data$PatientStudyID==id & !is.na(data$PatientStudyID), j], na.rm=T)
+      data[data$PatientStudyID == id & !is.na(data$PatientStudyID), j] <-
+        min(data[data$PatientStudyID == id & !is.na(data$PatientStudyID), j], na.rm = TRUE)
     }
   }
 
   data <- rm.TooEarly(data, TBdrugStart.names, maxtime = threeWeeks)
   data <- rm.TooEarly(data, TBDrugEnd.names, maxtime = threeWeeks)
 
-  data$TBDrugStart.min <- apply(data[ ,TBdrugStart.names], 1, min, na.rm=T)
-  data$TBDrugEnd.max   <- apply(data[ ,TBDrugEnd.names], 1, max, na.rm=T)
+  data$TBDrugStart.min <- apply(data[ ,TBdrugStart.names], 1, min, na.rm = TRUE)
+  data$TBDrugEnd.max   <- apply(data[ ,TBDrugEnd.names], 1, max, na.rm = TRUE)
 
   data <- rm.TooEarly(data, testDate.names, maxtime = threeWeeks)
   data <- calc.testDate.min(data, testDate.names, maxtime = threeWeeks)
@@ -141,27 +146,30 @@ cleanData <- function(data){
   # lower limits culture report dates -----------------------------------------
   ## the culture takes at least _dur_ days to produce a result
 
-  dur <- c(POSITIVE=1, NEGATIVE=sixWeeks)   #days
+  dur <- c(POSITIVE = 1,
+           NEGATIVE = sixWeeks)   #days
   data$TBculttestDate.orig <- data$TBculttestDate
   dur.each <- as.vector(dur[as.character(data$TBcult)])
-  data <- transform(data, TBculttestDate.resMin = testDate.min+dur.each)
+  data <- transform(data,
+                    TBculttestDate.resMin = testDate.min + dur.each)
   data$TBculttestDate <- apply(data, 1,
-                               function(x) max(x["TBculttestDate"], x["TBculttestDate.resMin"], na.rm = TRUE))
-  data$TBcultCens <- data$TBculttestDate!=data$TBculttestDate.orig
+                               function(x) max(x["TBculttestDate"],
+                                               x["TBculttestDate.resMin"], na.rm = TRUE))
+  data$TBcultCens <- data$TBculttestDate != data$TBculttestDate.orig
 
 
   # time-to-events ----------------------------------------------------------
 
-  calcTimeToEvent <- function(testDate) difftime(testDate, data$testDate.min, units="days")
-
+  calcTimeToEvent <- function(testDate)
+    difftime(testDate, data$testDate.min, units = "days")
 
   data <- transform(data,
-                    TBconfirmed = (Diagoutcome%in%c("Active TB", "Active TB;Other")),
+                    TBconfirmed = (Diagoutcome %in% c("Active TB", "Active TB;Other")),
 
-                    preCultDrug = (TBculttestDate>TBDrugStart.min),
-                    preTestDrug = (testDate.min>TBDrugStart.min),
+                    preCultDrug = (TBculttestDate > TBDrugStart.min),
+                    preTestDrug = (testDate.min > TBDrugStart.min),
 
-                    DrugCult_diff = round(difftime(TBculttestDate, TBDrugStart.min, units="days")),
+                    DrugCult_diff = round(difftime(TBculttestDate, TBDrugStart.min, units = "days")),
                     testDrug_diff = calcTimeToEvent(TBDrugStart.min),
                     testDiagCon_diff = round(calcTimeToEvent(DateDiagCon)),
                     testCult_diff = calcTimeToEvent(TBculttestDate),
@@ -193,15 +201,15 @@ cleanData <- function(data){
   # View(data.frame(data$PatientStudyID, data$testDate.min, data$DateVisitFU, data$DateVisitFU0, data$start.to.FU)[order(data$PatientStudyID),])  #check
 
   data$start.to.Imaging <- pmax(data$start.to.CT, data$start.to.CXR, data$start.to.MRI, data$start.to.PET, na.rm = TRUE)
-  data$start.to.IGRA  <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm=TRUE)
-  data$start.to.other <- pmax(data$start.to.other1, data$start.to.other2, na.rm=TRUE)
+  data$start.to.IGRA  <- pmax(data$start.to.QFN, data$start.to.TSPOT, na.rm = TRUE)
+  data$start.to.other <- pmax(data$start.to.other1, data$start.to.other2, na.rm = TRUE)
 
   #NeedleAsp isnt a test but a sampling technique so could be used for other test
-  data$start.to.Histology <- pmax(data$start.to.HistBiop, data$start.to.NeedleAsp, na.rm=TRUE)
+  data$start.to.Histology <- pmax(data$start.to.HistBiop, data$start.to.NeedleAsp, na.rm = TRUE)
 
   data$start.to.clinicalfeatures <- with(data, pmax(start.to.TBcultorig, start.to.Smear, start.to.Histology,
-                                                    start.to.BAL, start.to.PCR, start.to.TST,
-                                                    start.to.Imaging, start.to.IGRA, start.to.other, na.rm=TRUE))
+                                                    start.to.BAL, start.to.PCR, start.to.TST, start.to.Imaging,
+                                                    start.to.IGRA, start.to.other, na.rm = TRUE))
 
   ## only interested in 2 month followup
   # data$start.to.FU[data$VisitFU!="2 month FU"] <- NA
@@ -218,7 +226,7 @@ cleanData <- function(data){
 
   data <- fillInEndOfTreatmentDate(data)
 
-  data$TBDrug_diff <- difftime(data$TBDrugEnd.max, data$TBDrugStart.min, units="days")
+  data$TBDrug_diff <- difftime(data$TBDrugEnd.max, data$TBDrugStart.min, units = "days")
 
   ## this isn't perfect because there may be treatment gaps but is an ok approximation
   drugReviewPeriod <- twoMonths
@@ -258,29 +266,30 @@ cleanData <- function(data){
                                     "HistBiop","NeedleAsp","PCR","MRI","TSTcut","PET","TSTres","IGRAorTST"))
 
   data$Dosanjh <- as.factor(data$Dosanjh)
-  data$Dosanjh <- relevel(data$Dosanjh, ref="1")
+  data$Dosanjh <- relevel(data$Dosanjh, ref = "1")
 
-  data$Ethnclass <- relevel(data$Ethnclass, ref="White")
+  data$Ethnclass <- relevel(data$Ethnclass, ref = "White")
 
   data$Country <- as.factor(data$Country)
-  data$Country <- relevel(data$Country, ref="ENGLAND")
+  data$Country <- relevel(data$Country, ref = "ENGLAND")
 
   data$Sex <- as.factor(data$Sex)
 
   ##TODO##
   ## what to do about TSTcut NA level?
 
-  data[,test.names.ORIGINAL][is.empty(data[,test.names.ORIGINAL]) & !is.na(data[,testDate.names.ORIGINAL])] <- "INDETERMINATE"
-  data[,test.names][is.empty(data[,test.names])] <- "Not taken"
+  data[ ,test.names.ORIGINAL][is.empty(data[ ,test.names.ORIGINAL]) & !is.na(data[ ,testDate.names.ORIGINAL])] <- "INDETERMINATE"
+  data[ ,test.names][is.empty(data[ ,test.names])] <- "Not taken"
 
-  data$Country <- joinLevels(data$Country, list("UK" = c("ENGLAND","IRELAND","UNITED KINGDOM","WALES","SCOTLAND")))
+  data$Country <- joinLevels(data$Country,
+                             list("UK" = c("ENGLAND","IRELAND","UNITED KINGDOM","WALES","SCOTLAND")))
   data$Country[data$Country == "N/A"] <- NA
   data$Country <- droplevels(data$Country)
 
 
   #  new fields -------------------------------------------------------------
 
-  data$Alt_diag <- !data$TBconfirmed & !data$Diagoutcome%in%c("Indeterminate","Not given",NA,"")
+  data$Alt_diag <- !data$TBconfirmed & !data$Diagoutcome %in% c("Indeterminate","Not given",NA,"")
 
   data$jobrisk <- data$New_occupation == "Healthcare worker"
 
@@ -298,8 +307,9 @@ cleanData <- function(data){
 
   # symptoms counts ----------------------------------------------------------
 
-  symptoms.names <- c("Cough","Fever","Ngtsweat","Wghtloss","Haemop","Leth","OtherAE1","OtherAE2","OtherAE3","OtherAE4","OtherAE5","OtherAE6")
-  data$numSymptoms <- apply(data[,symptoms.names],1,sum)#, na.rm=T)
+  symptoms.names <- c("Cough","Fever","Ngtsweat","Wghtloss","Haemop","Leth",
+                      "OtherAE1","OtherAE2","OtherAE3","OtherAE4","OtherAE5","OtherAE6")
+  data$numSymptoms <- apply(data[ ,symptoms.names], 1, sum)#, na.rm=T)
 
   ## group number of symptoms
   lookuplist <- list("1"=1,"2"=2,"3"=3,"4"=4, "5"=5, ">5"=c(6,7,8,9,10,11,12))
@@ -313,7 +323,7 @@ cleanData <- function(data){
   symptomsEndDates.names <- paste(symptoms.names, "End", sep="")
 
   for (i in symptomsEndDates.names){
-    data[,i] <- as.Date.POSIX(data[,i])}
+    data[,i] <- as.Date.POSIX(data[ ,i])}
 
 
   data <- EstimateSymptomsResolved(data, symptomsEndDates.names, symptoms.names, drugReviewPeriod)
@@ -323,7 +333,8 @@ cleanData <- function(data){
 
   # estimate counts of each test taken --------------------------------------
 
-  tests <- c("TBcult", "Smear", "IGRA", "TSTres", "TSPOT", "QFN", "CXR", "CSF", "BAL", "HistBiop", "NeedleAsp", "PCR", "CT", "MRI", "PET")
+  tests <- c("TBcult", "Smear", "IGRA", "TSTres", "TSPOT", "QFN", "CXR",
+             "CSF", "BAL", "HistBiop", "NeedleAsp", "PCR", "CT", "MRI", "PET")
 
   NumEachTest <- data.frame(apply(data[,tests] != "Not taken", 2, as.numeric))
   NumEachTest[is.na(NumEachTest)] <- 0
@@ -360,6 +371,10 @@ cleanData <- function(data){
   # data <- data.frame(data, totalcost=calcPatientCostofTests(data))
 
   data <- droplevels(data)
+
+  if (save_data){
+
+  }
 
   return(data)
 }

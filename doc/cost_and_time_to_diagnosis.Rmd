@@ -3,7 +3,7 @@ title: "Cost and time to diagnosis"
 author: "Nathan Green"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette
+  pdf_document
 vignette: >
   %\VignetteIndexEntry{Cost and time to diagnosis}
   %\VignetteEngine{knitr::rmarkdown}
@@ -46,10 +46,86 @@ costs <- calcPatientCostofTests(data, COSTS = rcosts)
 ```
 
 
+## All patients using the estimated diagnosis time.
+
 ```{r fig.width=7, fig.height=7}
-# plots
+
+par(mfrow = c(2, 2))
 
 plot(times, costs, xlim = c(0, 500))
 plot(times, costs, xlim = c(0, 50))
+
+hist(na.omit(times), breaks = 80, freq = FALSE, xlim = c(0,200), main = "times")
+lines(density(na.omit(times), kernel = "g", from = 0), col = "red")
+hist(na.omit(costs), breaks = 100, freq = FALSE, main = "costs")
+lines(density(na.omit(costs), from = 0), col = "red")#, width = 1000, kernel = "bi"))
+```
+
+## Dosanjh category 1 or 2 patients using time from first test to start on treatment.
+
+```{r fig.width=7, fig.height=7}
+times <- as.numeric(data$testDrug_diff)
+
+Dosanjh1 <- data$DosanjhGrouped == 1
+Dosanjh12 <- data$DosanjhGrouped %in% c(1,2)
+
+par(mfrow = c(2,2))
+
+plot(times[Dosanjh1],
+     costs[Dosanjh1], main = "Cat 1")
+
+plot(times[Dosanjh1],
+     costs[Dosanjh1],
+     xlim = c(0, 45), ylim = c(0, 2000),
+     main = "Cat 1")
+
+plot(times[Dosanjh12],
+     costs[Dosanjh12], main = "Cat 1 + 2")
+
+plot(times[Dosanjh12],
+     costs[Dosanjh12],
+     xlim = c(0, 45), ylim = c(0, 2000),
+     main = "Cat 1 + 2")
+
+```
+
+```{r fig.width=7, fig.height=3.5}
+par(mfrow=c(1,2))
+hist(na.omit(times[Dosanjh12]), breaks = 80, freq = FALSE, xlim = c(0,200), main = "times")
+lines(density(na.omit(times[Dosanjh12]), kernel = "g", from = 0), col = "red")
+hist(na.omit(costs[Dosanjh12]), breaks = 100, freq = FALSE, main = "costs")
+lines(density(na.omit(costs[Dosanjh12]), from = 0), col = "red")#, width = 1000, kernel = "bi"))
+```
+
+## First test to TB culture.
+
+```{r fig.width=7, fig.height=7}
+times <- as.numeric(data$start.to.TBcultorig)
+
+par(mfrow = c(2,2))
+
+plot(times[Dosanjh12],
+     costs[Dosanjh12], main = "Cat 1")
+
+plot(times[Dosanjh12],
+     costs[Dosanjh12],
+     xlim = c(0, 45), ylim = c(0, 2000),
+     main = "Cat 1")
+
+plot(times[Dosanjh12],
+     costs[Dosanjh12], main = "Cat 1 + 2")
+
+plot(times[Dosanjh12],
+     costs[Dosanjh12],
+     xlim = c(0, 45), ylim = c(0, 2000),
+     main = "Cat 1 + 2")
+```
+
+```{r fig.width=7, fig.height=3.5}
+par(mfrow=c(1,2))
+hist(na.omit(times[Dosanjh12]), breaks = 80, freq = FALSE, xlim = c(0,200), main = "times")
+lines(density(na.omit(times[Dosanjh12]), kernel = "g", from = 0), col = "red")
+hist(na.omit(costs[Dosanjh12]), breaks = 100, freq = FALSE, main = "costs")
+lines(density(na.omit(costs[Dosanjh12]), from = 0), col = "red")#, width = 1000, kernel = "bi"))
 ```
 
